@@ -1,0 +1,695 @@
+const STORAGE_KEY = "dearLetters.items";
+const DRAFT_KEY = "dearLetters.draft";
+const LETTER_SCHEMA_VERSION = 1;
+
+const elements = {
+  form: document.querySelector("#letterForm"),
+  to: document.querySelector("#toInput"),
+  message: document.querySelector("#messageInput"),
+  closing: document.querySelector("#closingInput"),
+  name: document.querySelector("#nameInput"),
+  meta: document.querySelector("#metaInput"),
+  agree: document.querySelector("#agreeInput"),
+  status: document.querySelector("#statusText"),
+  previewLocation: document.querySelector("#previewLocation"),
+  previewDate: document.querySelector("#previewDate"),
+  previewTo: document.querySelector("#previewTo"),
+  previewMessage: document.querySelector("#previewMessage"),
+  previewClosing: document.querySelector("#previewClosing"),
+  previewName: document.querySelector("#previewName"),
+  lettersGrid: document.querySelector("#lettersGrid"),
+  letterCount: document.querySelector("#letterCount"),
+  template: document.querySelector("#letterCardTemplate"),
+  newButton: document.querySelector("#newButton"),
+  downloadImageButton: document.querySelector("#downloadImageButton"),
+  openJsonButton: document.querySelector("#openJsonButton"),
+  saveJsonButton: document.querySelector("#saveJsonButton"),
+  exportJsonButton: document.querySelector("#exportJsonButton"),
+  jsonFileInput: document.querySelector("#jsonFileInput"),
+  composeSection: document.querySelector("#compose"),
+  wallSection: document.querySelector("#wall"),
+  letterRouteSection: document.querySelector("#letterRoute"),
+  routeMode: document.querySelector("#routeMode"),
+  routeTitle: document.querySelector("#routeTitle"),
+  routeDescription: document.querySelector("#routeDescription"),
+  routePrimaryLink: document.querySelector("#routePrimaryLink"),
+  routeSecondaryLink: document.querySelector("#routeSecondaryLink"),
+  viewPaperWrap: document.querySelector("#viewPaperWrap"),
+  viewLocation: document.querySelector("#viewLocation"),
+  viewDate: document.querySelector("#viewDate"),
+  viewTo: document.querySelector("#viewTo"),
+  viewMessage: document.querySelector("#viewMessage"),
+  viewClosing: document.querySelector("#viewClosing"),
+  viewName: document.querySelector("#viewName"),
+  copyLinkButton: document.querySelector("#copyLinkButton"),
+  downloadViewImageButton: document.querySelector("#downloadViewImageButton"),
+  navLinks: document.querySelectorAll("[data-route-link]"),
+};
+
+let letters = [];
+let fileHandle = null;
+let activeViewLetter = null;
+
+const todayText = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+}).format(new Date());
+
+function createEmptyDraft() {
+  return {
+    to: "",
+    message: "",
+    closing: "With love",
+    name: "",
+    meta: `Today, from my heart - ${todayText}`,
+  };
+}
+
+function createId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `letter-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createTimestamp(offset = 0) {
+  return new Date(Date.now() + offset).toISOString();
+}
+
+function normalizeLetter(rawLetter = {}, index = 0) {
+  const createdAt = rawLetter.createdAt || rawLetter.created_at || createTimestamp(index);
+  const updatedAt = rawLetter.updatedAt || rawLetter.updated_at || null;
+
+  return {
+    id: String(rawLetter.id || createId()),
+    to: String(rawLetter.to || rawLetter.toName || rawLetter.to_name || ""),
+    message: String(rawLetter.message || ""),
+    closing: String(rawLetter.closing || "With love"),
+    name: String(rawLetter.name || rawLetter.authorName || rawLetter.author_name || ""),
+    meta: String(rawLetter.meta || `Today, from my heart - ${todayText}`),
+    createdAt,
+    updatedAt,
+  };
+}
+
+function normalizeLettersPayload(data) {
+  const imported = Array.isArray(data) ? data : data && data.letters;
+  if (!Array.isArray(imported)) {
+    throw new Error("JSON file must be an array or contain a letters array.");
+  }
+
+  return imported.map((letter, index) => normalizeLetter(letter, index));
+}
+
+function createLetterFromDraft(draft) {
+  return normalizeLetter({
+    ...draft,
+    id: createId(),
+    createdAt: createTimestamp(),
+    updatedAt: null,
+  });
+}
+
+function readJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readStoredLetters() {
+  const stored = readJson(STORAGE_KEY, null);
+  if (!stored) return null;
+  try {
+    return normalizeLettersPayload(stored);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLetters(items) {
+  writeJson(STORAGE_KEY, {
+    schemaVersion: LETTER_SCHEMA_VERSION,
+    letters: items.map((letter, index) => normalizeLetter(letter, index)),
+  });
+}
+
+function getDraftFromForm() {
+  return {
+    to: elements.to.value.trim(),
+    message: elements.message.value.trim(),
+    closing: elements.closing.value.trim(),
+    name: elements.name.value.trim(),
+    meta: elements.meta.value.trim(),
+  };
+}
+
+function setForm(draft) {
+  elements.to.value = draft.to || "";
+  elements.message.value = draft.message || "";
+  elements.closing.value = draft.closing || "With love";
+  elements.name.value = draft.name || "";
+  elements.meta.value = draft.meta || `Today, from my heart - ${todayText}`;
+  updatePreview();
+}
+
+function splitMeta(meta) {
+  const value = meta || `Today, from my heart - ${todayText}`;
+  const parts = value.split(" - ");
+  if (parts.length > 1) {
+    return {
+      location: parts.slice(0, -1).join(" - "),
+      date: parts.at(-1),
+    };
+  }
+  return {
+    location: value,
+    date: todayText,
+  };
+}
+
+function parseRoute(hash = window.location.hash) {
+  const cleanHash = hash.replace(/^#\/?/, "").trim();
+  const parts = cleanHash.split("/").filter(Boolean);
+
+  if (!parts.length || parts[0] === "compose") {
+    return { name: "compose", id: null };
+  }
+
+  if (parts[0] === "wall") {
+    return { name: "wall", id: null };
+  }
+
+  if (parts[0] === "letter" && parts[1]) {
+    return {
+      name: parts[2] === "edit" ? "letter-edit" : "letter-view",
+      id: decodeURIComponent(parts[1]),
+    };
+  }
+
+  return { name: "not-found", id: null };
+}
+
+function setActiveRouteLink(routeName) {
+  elements.navLinks.forEach((link) => {
+    const isActive = link.dataset.routeLink === routeName;
+    link.classList.toggle("active", isActive);
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+
+function setVisibleSection(sectionName) {
+  elements.composeSection.classList.toggle("is-hidden", sectionName !== "compose");
+  elements.wallSection.classList.toggle("is-hidden", sectionName !== "wall");
+  elements.letterRouteSection.classList.toggle("is-hidden", sectionName !== "letter");
+}
+
+function getLetterUrl(letterId) {
+  const url = new URL(window.location.href);
+  url.hash = `#/letter/${encodeURIComponent(letterId)}`;
+  return url.toString();
+}
+
+function setRouteActionsVisible(isVisible) {
+  elements.copyLinkButton.classList.toggle("is-hidden", !isVisible);
+  elements.downloadViewImageButton.classList.toggle("is-hidden", !isVisible);
+}
+
+function renderViewPaper(letter) {
+  const meta = splitMeta(letter.meta);
+
+  elements.viewLocation.textContent = meta.location || "Location";
+  elements.viewDate.textContent = meta.date || todayText;
+  elements.viewTo.textContent = `Dear ${letter.to || "..."} ,`;
+  elements.viewMessage.textContent = letter.message || "";
+  elements.viewClosing.textContent = letter.closing ? `${letter.closing},` : "With love,";
+  elements.viewName.textContent = letter.name || "";
+}
+
+function renderLetterRoute(route) {
+  const letter = letters.find((item) => item.id === route.id);
+
+  setVisibleSection("letter");
+  setActiveRouteLink("");
+  activeViewLetter = letter || null;
+
+  if (!letter) {
+    elements.viewPaperWrap.classList.add("is-hidden");
+    setRouteActionsVisible(false);
+    elements.routeMode.textContent = "Not found";
+    elements.routeTitle.textContent = "Letter not found";
+    elements.routeDescription.textContent = "This link does not match any letter saved in this browser yet.";
+    elements.routePrimaryLink.textContent = "Back to wall";
+    elements.routePrimaryLink.href = "#/wall";
+    elements.routeSecondaryLink.textContent = "Compose";
+    elements.routeSecondaryLink.href = "#/compose";
+    return;
+  }
+
+  const isEditRoute = route.name === "letter-edit";
+  elements.viewPaperWrap.classList.toggle("is-hidden", isEditRoute);
+  setRouteActionsVisible(!isEditRoute);
+  renderViewPaper(letter);
+
+  elements.routeMode.textContent = isEditRoute ? "Edit route" : "Letter";
+  elements.routeTitle.textContent = `Dear ${letter.to || "..."}`;
+  elements.routeDescription.textContent = isEditRoute
+    ? "This edit route is ready. The full editing screen will be implemented in step 4."
+    : "A quiet page for reading and sharing this letter.";
+  elements.routePrimaryLink.textContent = isEditRoute ? "Open compose" : "Back to wall";
+  elements.routePrimaryLink.href = isEditRoute ? "#/compose" : "#/wall";
+  elements.routeSecondaryLink.textContent = isEditRoute ? "Back to wall" : "Edit";
+  elements.routeSecondaryLink.href = isEditRoute ? "#/wall" : `#/letter/${encodeURIComponent(letter.id)}/edit`;
+}
+
+function renderRoute() {
+  const route = parseRoute();
+
+  if (window.location.hash === "#compose") {
+    window.location.replace("#/compose");
+    return;
+  }
+
+  if (window.location.hash === "#wall") {
+    window.location.replace("#/wall");
+    return;
+  }
+
+  if (route.name === "compose") {
+    setVisibleSection("compose");
+    setActiveRouteLink("compose");
+    return;
+  }
+
+  if (route.name === "wall") {
+    setVisibleSection("wall");
+    setActiveRouteLink("wall");
+    return;
+  }
+
+  if (route.name === "letter-view" || route.name === "letter-edit") {
+    renderLetterRoute(route);
+    return;
+  }
+
+  setVisibleSection("letter");
+  setActiveRouteLink("");
+  activeViewLetter = null;
+  elements.viewPaperWrap.classList.add("is-hidden");
+  setRouteActionsVisible(false);
+  elements.routeMode.textContent = "Unknown route";
+  elements.routeTitle.textContent = "This page does not exist";
+  elements.routeDescription.textContent = "Use the main navigation to return to a known area.";
+  elements.routePrimaryLink.textContent = "Home";
+  elements.routePrimaryLink.href = "#/compose";
+  elements.routeSecondaryLink.textContent = "Letters Wall";
+  elements.routeSecondaryLink.href = "#/wall";
+}
+
+function updatePreview() {
+  const draft = getDraftFromForm();
+  const meta = splitMeta(draft.meta);
+
+  elements.previewLocation.textContent = meta.location || "Location";
+  elements.previewDate.textContent = meta.date || "Date";
+  elements.previewTo.textContent = `Dear ${draft.to || "..."} ,`;
+  elements.previewMessage.textContent = draft.message;
+  elements.previewClosing.textContent = draft.closing ? `${draft.closing},` : "With love,";
+  elements.previewName.textContent = draft.name;
+
+  writeJson(DRAFT_KEY, draft);
+}
+
+function persistLetters() {
+  letters = letters.map((letter, index) => normalizeLetter(letter, index));
+  writeStoredLetters(letters);
+  renderLetters();
+  renderRoute();
+}
+
+function showStatus(message) {
+  elements.status.textContent = message;
+  window.clearTimeout(showStatus.timer);
+  showStatus.timer = window.setTimeout(() => {
+    elements.status.textContent = "";
+  }, 3600);
+}
+
+function drawRoundRect(ctx, x, y, width, height, radius) {
+  if (typeof ctx.roundRect === "function") {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    return;
+  }
+
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+function renderLetters() {
+  elements.lettersGrid.innerHTML = "";
+  elements.letterCount.textContent = `${letters.length} ${letters.length === 1 ? "letter" : "letters"}`;
+
+  if (!letters.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "No letters yet. Write the first one above.";
+    elements.lettersGrid.append(empty);
+    return;
+  }
+
+  letters
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .forEach((letter) => {
+      const card = elements.template.content.firstElementChild.cloneNode(true);
+      card.querySelector(".card-to").textContent = `Dear ${letter.to || "..."}`;
+      card.querySelector(".card-message").textContent = letter.message || "";
+      card.querySelector(".card-name").textContent = letter.name || "Anonymous";
+      card.querySelector(".card-date").textContent = new Intl.DateTimeFormat("vi-VN").format(new Date(letter.createdAt));
+      card.querySelector(".card-date").dateTime = letter.createdAt;
+      card.querySelector(".delete-card").addEventListener("click", () => {
+        letters = letters.filter((item) => item.id !== letter.id);
+        persistLetters();
+        showStatus("Letter removed.");
+      });
+      card.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        location.hash = `#/letter/${encodeURIComponent(letter.id)}`;
+      });
+      elements.lettersGrid.append(card);
+    });
+}
+
+async function loadInitialLetters() {
+  const savedLetters = readStoredLetters();
+  if (Array.isArray(savedLetters)) {
+    letters = savedLetters;
+    writeStoredLetters(letters);
+    return;
+  }
+
+  try {
+    const response = await fetch("letters.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("No seed file.");
+    const data = await response.json();
+    letters = normalizeLettersPayload(data);
+    writeStoredLetters(letters);
+  } catch {
+    letters = [];
+  }
+}
+
+function normalizeImportedData(data) {
+  return normalizeLettersPayload(data);
+}
+
+function exportJsonFile() {
+  const blob = new Blob([JSON.stringify({ schemaVersion: LETTER_SCHEMA_VERSION, letters }, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "letters.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function saveToPickedFile() {
+  const data = JSON.stringify({ schemaVersion: LETTER_SCHEMA_VERSION, letters }, null, 2);
+
+  if ("showSaveFilePicker" in window) {
+    if (!fileHandle) {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: "letters.json",
+        types: [
+          {
+            description: "JSON file",
+            accept: { "application/json": [".json"] },
+          },
+        ],
+      });
+    }
+    const writable = await fileHandle.createWritable();
+    await writable.write(data);
+    await writable.close();
+    showStatus("Saved to JSON file.");
+    return;
+  }
+
+  exportJsonFile();
+  showStatus("Browser downloaded a JSON copy.");
+}
+
+async function openJsonWithPicker() {
+  if ("showOpenFilePicker" in window) {
+    const [handle] = await window.showOpenFilePicker({
+      multiple: false,
+      types: [
+        {
+          description: "JSON file",
+          accept: { "application/json": [".json"] },
+        },
+      ],
+    });
+    fileHandle = handle;
+    const file = await handle.getFile();
+    return file.text();
+  }
+
+  return new Promise((resolve, reject) => {
+    elements.jsonFileInput.onchange = () => {
+      const [file] = elements.jsonFileInput.files;
+      if (!file) {
+        reject(new Error("No file selected."));
+        return;
+      }
+      file.text().then(resolve, reject);
+      elements.jsonFileInput.value = "";
+    };
+    elements.jsonFileInput.click();
+  });
+}
+
+async function importJsonFile() {
+  try {
+    const raw = await openJsonWithPicker();
+    letters = normalizeImportedData(JSON.parse(raw));
+    persistLetters();
+    showStatus("JSON file loaded.");
+  } catch (error) {
+    showStatus(error.message || "Could not open JSON file.");
+  }
+}
+
+function getWrappedCanvasLines(context, text, maxWidth) {
+  const paragraphs = (text || "").split("\n");
+  const lines = [];
+
+  paragraphs.forEach((paragraph) => {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    let line = "";
+
+    if (!words.length) {
+      lines.push("");
+      return;
+    }
+
+    words.forEach((word) => {
+      const test = line ? `${line} ${word}` : word;
+      if (context.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    });
+
+    lines.push(line);
+  });
+
+  return lines;
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
+  const lines = getWrappedCanvasLines(context, text, maxWidth);
+  let cursorY = y;
+
+  lines.forEach((line) => {
+    context.fillText(line, x, cursorY);
+    cursorY += lineHeight;
+  });
+
+  return cursorY;
+}
+
+function downloadLetterImage(source = getDraftFromForm()) {
+  const letter = normalizeLetter(source);
+  const meta = splitMeta(letter.meta);
+  const canvas = document.createElement("canvas");
+  const scale = 2;
+  const width = 1080;
+  const marginX = 132;
+  const paperX = 70;
+  const paperY = 58;
+  const lineHeight = 44;
+  const messageTop = 304;
+  const maxTextWidth = width - marginX * 2;
+
+  const measuringCanvas = document.createElement("canvas");
+  const measuringContext = measuringCanvas.getContext("2d");
+  measuringContext.font = "32px 'Times New Roman', serif";
+  const messageLines = getWrappedCanvasLines(measuringContext, letter.message, maxTextWidth);
+  const messageHeight = Math.max(messageLines.length, 1) * lineHeight;
+  const signatureTop = messageTop + messageHeight + 42;
+  const height = Math.max(760, signatureTop + 170);
+
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#f1f3f7";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.shadowColor = "rgba(36, 43, 60, 0.22)";
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 16;
+  ctx.fillStyle = "#ffffff";
+  drawRoundRect(ctx, paperX, paperY, width - paperX * 2, height - paperY * 2, 18);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+
+  ctx.strokeStyle = "#e9eef7";
+  ctx.lineWidth = 2;
+  for (let y = 128; y < height - 86; y += 44) {
+    ctx.beginPath();
+    ctx.moveTo(110, y);
+    ctx.lineTo(width - 110, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#58515c";
+  ctx.textAlign = "right";
+  ctx.font = "italic 30px 'Times New Roman', serif";
+  ctx.fillText(meta.location || "Location", width - 132, 112);
+  ctx.font = "italic 26px 'Times New Roman', serif";
+  ctx.fillText(meta.date || todayText, width - 132, 154);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#323137";
+  ctx.font = "italic 44px 'Times New Roman', serif";
+  ctx.fillText(`Dear ${letter.to || "..."} ,`, marginX, 230);
+
+  ctx.font = "32px 'Times New Roman', serif";
+  wrapCanvasText(ctx, letter.message, marginX, messageTop, maxTextWidth, lineHeight);
+
+  ctx.textAlign = "right";
+  ctx.font = "italic 32px 'Times New Roman', serif";
+  ctx.fillText(letter.closing ? `${letter.closing},` : "With love,", width - marginX, signatureTop);
+  ctx.font = "bold italic 34px 'Times New Roman', serif";
+  ctx.fillText(letter.name || "", width - marginX, signatureTop + 44);
+
+  const link = document.createElement("a");
+  link.download = `dear-letter-${letter.id}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+async function copyActiveLetterLink() {
+  if (!activeViewLetter) return;
+
+  const link = getLetterUrl(activeViewLetter.id);
+  const originalLabel = elements.copyLinkButton.textContent;
+  try {
+    await navigator.clipboard.writeText(link);
+  } catch {
+    const fallbackInput = document.createElement("input");
+    fallbackInput.value = link;
+    document.body.append(fallbackInput);
+    fallbackInput.select();
+    document.execCommand("copy");
+    fallbackInput.remove();
+  }
+
+  elements.copyLinkButton.textContent = "Copied";
+  window.clearTimeout(copyActiveLetterLink.timer);
+  copyActiveLetterLink.timer = window.setTimeout(() => {
+    elements.copyLinkButton.textContent = originalLabel;
+  }, 1800);
+}
+
+elements.form.addEventListener("input", updatePreview);
+
+elements.form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const draft = getDraftFromForm();
+
+  if (!draft.message) {
+    showStatus("Please write a message before posting.");
+    elements.message.focus();
+    return;
+  }
+
+  if (!elements.agree.checked) {
+    showStatus("Please agree before keeping this letter on the wall.");
+    elements.agree.focus();
+    return;
+  }
+
+  letters.push(createLetterFromDraft(draft));
+
+  persistLetters();
+  showStatus("Letter saved.");
+  elements.agree.checked = false;
+  location.hash = "#/wall";
+});
+
+elements.newButton.addEventListener("click", () => {
+  setForm(createEmptyDraft());
+  elements.agree.checked = false;
+  showStatus("Fresh paper is ready.");
+});
+
+elements.downloadImageButton.addEventListener("click", () => downloadLetterImage());
+elements.downloadViewImageButton.addEventListener("click", () => {
+  if (activeViewLetter) downloadLetterImage(activeViewLetter);
+});
+elements.copyLinkButton.addEventListener("click", copyActiveLetterLink);
+elements.openJsonButton.addEventListener("click", importJsonFile);
+elements.saveJsonButton.addEventListener("click", () => {
+  saveToPickedFile().catch((error) => showStatus(error.message || "Could not save JSON file."));
+});
+elements.exportJsonButton.addEventListener("click", () => {
+  exportJsonFile();
+  showStatus("JSON exported.");
+});
+
+window.addEventListener("hashchange", renderRoute);
+
+loadInitialLetters().then(() => {
+  setForm(readJson(DRAFT_KEY, createEmptyDraft()));
+  renderLetters();
+  renderRoute();
+});

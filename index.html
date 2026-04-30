@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dear Letters</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#/compose" aria-label="Dear Letters">
+        <span class="brand-mark">✉</span>
+        <span>
+          <strong>Dear Letters</strong>
+          <small>Write from the heart</small>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a class="nav-link active" href="#/compose" data-route-link="compose">Home</a>
+        <a class="nav-link" href="#/wall" data-route-link="wall">Letters Wall</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="workspace" id="compose" aria-label="Compose letter">
+        <form class="panel compose-panel" id="letterForm">
+          <div class="section-title">
+            <h1>Compose Your Letter</h1>
+            <p>Express your thoughts with elegance</p>
+          </div>
+
+          <label>
+            <span>To</span>
+            <input id="toInput" name="to" type="text" placeholder="Dear someone special..." autocomplete="off" />
+          </label>
+
+          <label>
+            <span>Your message</span>
+            <textarea id="messageInput" name="message" placeholder="Pour your heart out here..."></textarea>
+          </label>
+
+          <div class="field-grid">
+            <label>
+              <span>Closing</span>
+              <input id="closingInput" name="closing" type="text" placeholder="With love" autocomplete="off" />
+            </label>
+
+            <label>
+              <span>Your name</span>
+              <input id="nameInput" name="name" type="text" placeholder="Your name" autocomplete="off" />
+            </label>
+          </div>
+
+          <label>
+            <span>Location & date</span>
+            <input id="metaInput" name="meta" type="text" placeholder="Today, from my heart" autocomplete="off" />
+          </label>
+
+          <div class="consent">
+            <input id="agreeInput" type="checkbox" />
+            <label for="agreeInput">I agree to keep this letter in my letters wall</label>
+          </div>
+
+          <div class="actions">
+            <button class="primary" type="submit">Post to Letters Wall</button>
+            <button class="ghost" type="button" id="newButton">New</button>
+          </div>
+
+          <div class="file-actions" aria-label="JSON actions">
+            <button type="button" id="openJsonButton">Open JSON</button>
+            <button type="button" id="saveJsonButton">Save JSON</button>
+            <button type="button" id="exportJsonButton">Export JSON</button>
+            <input id="jsonFileInput" type="file" accept="application/json,.json" hidden />
+          </div>
+
+          <p class="status" id="statusText" role="status" aria-live="polite"></p>
+        </form>
+
+        <aside class="panel preview-panel" aria-label="Live preview">
+          <div class="section-title">
+            <h2>Live Preview</h2>
+            <p>See how your letter looks</p>
+          </div>
+
+          <article class="paper-wrap">
+            <div class="paper" id="letterPreview">
+              <div class="paper-meta">
+                <span id="previewLocation">Location</span>
+                <span id="previewDate">Date</span>
+              </div>
+              <p class="salutation" id="previewTo">Dear ... ,</p>
+              <p class="letter-body" id="previewMessage"></p>
+              <div class="signature">
+                <span id="previewClosing">With love,</span>
+                <strong id="previewName"></strong>
+              </div>
+            </div>
+          </article>
+
+          <button class="download" type="button" id="downloadImageButton">Download Letter</button>
+        </aside>
+      </section>
+
+      <section class="wall-section" id="wall" aria-label="Letters wall">
+        <div class="wall-heading">
+          <div>
+            <h2>Letters Wall</h2>
+            <p>Your saved letters are kept gently here.</p>
+          </div>
+          <span id="letterCount">0 letters</span>
+        </div>
+        <div class="letters-grid" id="lettersGrid"></div>
+      </section>
+
+      <section class="route-section is-hidden" id="letterRoute" aria-label="Letter route">
+        <div class="route-card">
+          <p class="route-eyebrow" id="routeMode">Letter</p>
+          <h2 id="routeTitle">Letter route ready</h2>
+          <p id="routeDescription">This route is ready for the next implementation step.</p>
+          <article class="paper-wrap view-paper-wrap is-hidden" id="viewPaperWrap">
+            <div class="paper view-paper" id="viewLetterPaper">
+              <div class="paper-meta">
+                <span id="viewLocation">Location</span>
+                <span id="viewDate">Date</span>
+              </div>
+              <p class="salutation" id="viewTo">Dear ... ,</p>
+              <p class="letter-body" id="viewMessage"></p>
+              <div class="signature">
+                <span id="viewClosing">With love,</span>
+                <strong id="viewName"></strong>
+              </div>
+            </div>
+          </article>
+          <div class="route-actions">
+            <a class="route-button primary-link" id="routePrimaryLink" href="#/wall">Back to wall</a>
+            <a class="route-button" id="routeSecondaryLink" href="#/compose">Compose</a>
+            <button class="route-button" type="button" id="copyLinkButton">Copy Link</button>
+            <button class="route-button" type="button" id="downloadViewImageButton">Download Image</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="letterCardTemplate">
+      <article class="letter-card">
+        <button class="delete-card" type="button" aria-label="Delete letter">×</button>
+        <p class="card-to"></p>
+        <p class="card-message"></p>
+        <footer>
+          <span class="card-name"></span>
+          <time class="card-date"></time>
+        </footer>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
