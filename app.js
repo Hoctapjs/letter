@@ -317,6 +317,26 @@ function setVisibleSection(sectionName) {
   elements.letterRouteSection.classList.toggle("is-hidden", sectionName !== "letter");
 }
 
+function setControlLabel(control, label) {
+  const labelElement = control.querySelector(".button-label");
+  if (labelElement) {
+    labelElement.textContent = label;
+    return;
+  }
+  control.textContent = label;
+}
+
+function getControlLabel(control) {
+  return control.querySelector(".button-label")?.textContent || control.textContent;
+}
+
+function setControlIcon(control, iconName) {
+  const icon = control.querySelector(".icon");
+  if (icon) {
+    icon.src = `images/icons/${iconName}.png`;
+  }
+}
+
 function setEditMode(letter = null) {
   editingLetterId = letter ? letter.id : null;
   const isEditing = Boolean(letter);
@@ -325,7 +345,8 @@ function setEditMode(letter = null) {
   elements.formSubtitle.textContent = isEditing
     ? "Make a gentle change, then save it back to your wall"
     : "Express your thoughts with elegance";
-  elements.submitButton.textContent = isEditing ? "Save Changes" : "Post to Letters Wall";
+  setControlLabel(elements.submitButton, isEditing ? "Save Changes" : "Post to Letters Wall");
+  setControlIcon(elements.submitButton, isEditing ? "save" : "post");
   elements.newButton.classList.toggle("is-hidden", isEditing);
   elements.cancelEditButton.classList.toggle("is-hidden", !isEditing);
   elements.consentWrap.classList.toggle("is-hidden", isEditing);
@@ -400,9 +421,11 @@ async function renderLetterRoute(route) {
     elements.routeMode.textContent = "Not found";
     elements.routeTitle.textContent = "Letter not found";
     elements.routeDescription.textContent = "This link does not match any letter saved in this browser yet.";
-    elements.routePrimaryLink.textContent = "Back to wall";
+    setControlLabel(elements.routePrimaryLink, "Back to wall");
+    setControlIcon(elements.routePrimaryLink, "back");
     elements.routePrimaryLink.href = "#/wall";
-    elements.routeSecondaryLink.textContent = "Compose";
+    setControlLabel(elements.routeSecondaryLink, "Compose");
+    setControlIcon(elements.routeSecondaryLink, "compose");
     elements.routeSecondaryLink.href = "#/compose";
     return;
   }
@@ -427,9 +450,11 @@ async function renderLetterRoute(route) {
   elements.routeDescription.textContent = isEditRoute
     ? "This edit route is ready. The full editing screen will be implemented in step 4."
     : "A quiet page for reading and sharing this letter.";
-  elements.routePrimaryLink.textContent = isEditRoute ? "Open compose" : "Back to wall";
+  setControlLabel(elements.routePrimaryLink, isEditRoute ? "Open compose" : "Back to wall");
+  setControlIcon(elements.routePrimaryLink, isEditRoute ? "compose" : "back");
   elements.routePrimaryLink.href = isEditRoute ? "#/compose" : "#/wall";
-  elements.routeSecondaryLink.textContent = isEditRoute ? "Back to wall" : "Edit";
+  setControlLabel(elements.routeSecondaryLink, isEditRoute ? "Back to wall" : "Edit");
+  setControlIcon(elements.routeSecondaryLink, isEditRoute ? "back" : "edit");
   elements.routeSecondaryLink.href = isEditRoute ? "#/wall" : `#/letter/${encodeURIComponent(letter.id)}/edit`;
 }
 
@@ -474,9 +499,11 @@ async function renderRoute() {
   elements.routeMode.textContent = "Unknown route";
   elements.routeTitle.textContent = "This page does not exist";
   elements.routeDescription.textContent = "Use the main navigation to return to a known area.";
-  elements.routePrimaryLink.textContent = "Home";
+  setControlLabel(elements.routePrimaryLink, "Home");
+  setControlIcon(elements.routePrimaryLink, "home");
   elements.routePrimaryLink.href = "#/compose";
-  elements.routeSecondaryLink.textContent = "Letters Wall";
+  setControlLabel(elements.routeSecondaryLink, "Letters Wall");
+  setControlIcon(elements.routeSecondaryLink, "wall");
   elements.routeSecondaryLink.href = "#/wall";
 }
 
@@ -551,7 +578,14 @@ function renderLetters() {
     message.textContent = query
       ? "Try another name, recipient, location, or phrase from the message."
       : "Start with a small note. Your saved letters will appear here.";
-    action.textContent = query ? "Clear search" : "Write a letter";
+    const actionIcon = document.createElement("img");
+    const actionLabel = document.createElement("span");
+    actionIcon.className = "icon";
+    actionIcon.src = query ? "images/icons/cancel.png" : "images/icons/compose.png";
+    actionIcon.alt = "";
+    actionLabel.className = "button-label";
+    actionLabel.textContent = query ? "Clear search" : "Write a letter";
+    action.append(actionIcon, actionLabel);
     action.href = query ? "#/wall" : "#/compose";
     action.addEventListener("click", (event) => {
       if (!query) return;
@@ -831,7 +865,7 @@ async function copyActiveLetterLink() {
 }
 
 async function copyTextWithButtonFeedback(text, button) {
-  const originalLabel = button.textContent;
+  const originalLabel = getControlLabel(button);
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -843,10 +877,10 @@ async function copyTextWithButtonFeedback(text, button) {
     fallbackInput.remove();
   }
 
-  button.textContent = "Copied";
+  setControlLabel(button, "Copied");
   window.clearTimeout(button.copyTimer);
   button.copyTimer = window.setTimeout(() => {
-    button.textContent = originalLabel;
+    setControlLabel(button, originalLabel);
   }, 1800);
 }
 

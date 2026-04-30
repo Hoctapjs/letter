@@ -76,6 +76,24 @@ button {
   box-shadow: 0 4px 10px rgba(99, 116, 70, 0.18);
 }
 
+.brand-mark img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.button-label {
+  min-width: 0;
+}
+
 .brand strong {
   display: block;
   font-family: "Brush Script MT", "Segoe Script", cursive;
@@ -99,6 +117,10 @@ button {
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 46px;
   padding: 12px 20px;
   border: 1px solid rgba(160, 200, 120, 0.34);
@@ -257,6 +279,10 @@ textarea:focus {
 .ghost,
 .download,
 .file-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 48px;
   border: 0;
   border-radius: 10px;
@@ -276,7 +302,6 @@ textarea:focus {
 }
 
 .download {
-  display: block;
   width: min(210px, 100%);
   margin: 18px auto 0;
   color: #fffdf6;
@@ -407,6 +432,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 44px;
   padding: 0 16px;
   border-radius: 10px;
@@ -489,6 +515,10 @@ textarea:focus {
 }
 
 .card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 36px;
   border: 1px solid rgba(160, 200, 120, 0.28);
   border-radius: 8px;
@@ -528,6 +558,7 @@ textarea:focus {
 .empty-state a {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   min-height: 42px;
   padding: 0 14px;
   border-radius: 10px;
@@ -596,6 +627,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 46px;
   padding: 0 18px;
   border: 1px solid var(--line);
@@ -645,14 +677,16 @@ textarea:focus {
 }
 
 .share-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   border: 1px solid var(--line);
   border-radius: 50%;
   color: #58664b;
   background: rgba(255, 253, 246, 0.78);
-  font-size: 1.3rem;
-  line-height: 1;
+  padding: 0;
 }
 
 .share-field {
@@ -682,6 +716,10 @@ textarea:focus {
 }
 
 .share-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--line);

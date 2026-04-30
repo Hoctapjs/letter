@@ -4,12 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dear Letters</title>
+    <link rel="icon" type="image/png" href="images/writing.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
       <a class="brand" href="#/compose" aria-label="Dear Letters">
-        <span class="brand-mark">✉</span>
+        <span class="brand-mark"><img src="images/writing.png" alt="" /></span>
         <span>
           <strong>Dear Letters</strong>
           <small>Write from the heart</small>
@@ -17,8 +18,14 @@
       </a>
 
       <nav class="nav" aria-label="Main navigation">
-        <a class="nav-link active" href="#/compose" data-route-link="compose">Home</a>
-        <a class="nav-link" href="#/wall" data-route-link="wall">Letters Wall</a>
+        <a class="nav-link active" href="#/compose" data-route-link="compose">
+          <img class="icon" src="images/icons/home.png" alt="" />
+          <span class="button-label">Home</span>
+        </a>
+        <a class="nav-link" href="#/wall" data-route-link="wall">
+          <img class="icon" src="images/icons/wall.png" alt="" />
+          <span class="button-label">Letters Wall</span>
+        </a>
       </nav>
     </header>
 
@@ -63,15 +70,33 @@
           </div>
 
           <div class="actions">
-            <button class="primary" type="submit" id="submitButton">Post to Letters Wall</button>
-            <button class="ghost" type="button" id="newButton">New</button>
-            <button class="ghost is-hidden" type="button" id="cancelEditButton">Cancel Edit</button>
+            <button class="primary" type="submit" id="submitButton">
+              <img class="icon" src="images/icons/post.png" alt="" />
+              <span class="button-label">Post to Letters Wall</span>
+            </button>
+            <button class="ghost" type="button" id="newButton">
+              <img class="icon" src="images/icons/new.png" alt="" />
+              <span class="button-label">New</span>
+            </button>
+            <button class="ghost is-hidden" type="button" id="cancelEditButton">
+              <img class="icon" src="images/icons/cancel.png" alt="" />
+              <span class="button-label">Cancel Edit</span>
+            </button>
           </div>
 
           <div class="file-actions" aria-label="JSON actions">
-            <button type="button" id="openJsonButton">Open JSON</button>
-            <button type="button" id="saveJsonButton">Save JSON</button>
-            <button type="button" id="exportJsonButton">Export JSON</button>
+            <button type="button" id="openJsonButton">
+              <img class="icon" src="images/icons/open.png" alt="" />
+              <span class="button-label">Open JSON</span>
+            </button>
+            <button type="button" id="saveJsonButton">
+              <img class="icon" src="images/icons/save.png" alt="" />
+              <span class="button-label">Save JSON</span>
+            </button>
+            <button type="button" id="exportJsonButton">
+              <img class="icon" src="images/icons/export.png" alt="" />
+              <span class="button-label">Export JSON</span>
+            </button>
             <input id="jsonFileInput" type="file" accept="application/json,.json" hidden />
           </div>
 
@@ -99,7 +124,10 @@
             </div>
           </article>
 
-          <button class="download" type="button" id="downloadImageButton">Download Letter</button>
+          <button class="download" type="button" id="downloadImageButton">
+            <img class="icon" src="images/icons/download.png" alt="" />
+            <span class="button-label">Download Letter</span>
+          </button>
         </aside>
       </section>
 
@@ -116,7 +144,10 @@
             <span>Search letters</span>
             <input id="wallSearchInput" type="search" placeholder="Search by name, recipient, or message..." autocomplete="off" />
           </label>
-          <a class="wall-compose-link" href="#/compose">New Letter</a>
+          <a class="wall-compose-link" href="#/compose">
+            <img class="icon" src="images/icons/new.png" alt="" />
+            <span class="button-label">New Letter</span>
+          </a>
         </div>
         <div class="letters-grid" id="lettersGrid"></div>
       </section>
@@ -141,10 +172,22 @@
             </div>
           </article>
           <div class="route-actions">
-            <a class="route-button primary-link" id="routePrimaryLink" href="#/wall">Back to wall</a>
-            <a class="route-button" id="routeSecondaryLink" href="#/compose">Compose</a>
-            <button class="route-button" type="button" id="copyLinkButton">Copy Link</button>
-            <button class="route-button" type="button" id="downloadViewImageButton">Download Image</button>
+            <a class="route-button primary-link" id="routePrimaryLink" href="#/wall">
+              <img class="icon" src="images/icons/back.png" alt="" />
+              <span class="button-label">Back to wall</span>
+            </a>
+            <a class="route-button" id="routeSecondaryLink" href="#/compose">
+              <img class="icon" src="images/icons/compose.png" alt="" />
+              <span class="button-label">Compose</span>
+            </a>
+            <button class="route-button" type="button" id="copyLinkButton">
+              <img class="icon" src="images/icons/link.png" alt="" />
+              <span class="button-label">Copy Link</span>
+            </button>
+            <button class="route-button" type="button" id="downloadViewImageButton">
+              <img class="icon" src="images/icons/download.png" alt="" />
+              <span class="button-label">Download Image</span>
+            </button>
           </div>
         </div>
       </section>
@@ -157,14 +200,19 @@
             <p class="route-eyebrow">Letter saved</p>
             <h2 id="shareModalTitle">Share your letter</h2>
           </div>
-          <button class="share-close" type="button" id="closeShareModalButton" aria-label="Close">×</button>
+          <button class="share-close" type="button" id="closeShareModalButton" aria-label="Close">
+            <img class="icon" src="images/icons/close.png" alt="" />
+          </button>
         </div>
 
         <div class="share-field">
           <label for="viewLinkInput">View link</label>
           <div class="share-row">
             <input id="viewLinkInput" type="text" readonly />
-            <button type="button" id="copyViewLinkButton">Copy</button>
+            <button type="button" id="copyViewLinkButton">
+              <img class="icon" src="images/icons/copy.png" alt="" />
+              <span class="button-label">Copy</span>
+            </button>
           </div>
         </div>
 
@@ -172,14 +220,23 @@
           <label for="editLinkInput">Private edit link</label>
           <div class="share-row">
             <input id="editLinkInput" type="text" readonly />
-            <button type="button" id="copyEditLinkButton">Copy</button>
+            <button type="button" id="copyEditLinkButton">
+              <img class="icon" src="images/icons/copy.png" alt="" />
+              <span class="button-label">Copy</span>
+            </button>
           </div>
           <p>Anyone with this private edit link can edit or delete the letter.</p>
         </div>
 
         <div class="share-actions">
-          <a class="route-button primary-link" id="openCreatedLetterLink" href="#/wall">Open Letter</a>
-          <button class="route-button" type="button" id="doneShareModalButton">Done</button>
+          <a class="route-button primary-link" id="openCreatedLetterLink" href="#/wall">
+            <img class="icon" src="images/icons/view.png" alt="" />
+            <span class="button-label">Open Letter</span>
+          </a>
+          <button class="route-button" type="button" id="doneShareModalButton">
+            <img class="icon" src="images/icons/check.png" alt="" />
+            <span class="button-label">Done</span>
+          </button>
         </div>
       </div>
     </div>
@@ -196,9 +253,18 @@
           <time class="card-date"></time>
         </footer>
         <div class="card-actions">
-          <button class="card-action view-card" type="button">View</button>
-          <button class="card-action edit-card" type="button">Edit</button>
-          <button class="card-action danger delete-card" type="button">Delete</button>
+          <button class="card-action view-card" type="button">
+            <img class="icon" src="images/icons/view.png" alt="" />
+            <span class="button-label">View</span>
+          </button>
+          <button class="card-action edit-card" type="button">
+            <img class="icon" src="images/icons/edit.png" alt="" />
+            <span class="button-label">Edit</span>
+          </button>
+          <button class="card-action danger delete-card" type="button">
+            <img class="icon" src="images/icons/delete.png" alt="" />
+            <span class="button-label">Delete</span>
+          </button>
         </div>
       </article>
     </template>
