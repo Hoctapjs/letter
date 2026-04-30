@@ -26,7 +26,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Link dang `#/letter/{id}`.
 - Co nut `Back`, `Edit`, `Copy Link`, `Download Image`.
 
-## Buoc 4: Them che do sua thu
+## Buoc 4: Them che do sua thu - Done
 
 - Bam `Edit` se mo form voi du lieu thu cu.
 - Submit o che do edit se cap nhat thu thay vi tao thu moi.
@@ -34,7 +34,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Cap nhat `updatedAt`.
 - Sau khi sua xong quay ve trang xem thu.
 
-## Buoc 5: Toi uu Letters Wall
+## Buoc 5: Toi uu Letters Wall - Done
 
 - Card thu co cac nut `View`, `Edit`, `Delete`.
 - Them confirm truoc khi xoa.
@@ -42,7 +42,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Empty state dep hon.
 - Tim kiem/loc nhe neu can.
 
-## Buoc 6: Chuan bi cau truc Vercel
+## Buoc 6: Chuan bi cau truc Vercel - Done
 
 - Them `package.json`.
 - Them `vercel.json`.

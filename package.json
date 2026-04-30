@@ -1,0 +1,19 @@
+{
+  "name": "dear-letters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A lightweight letter writing app prepared for Vercel static hosting.",
+  "scripts": {
+    "check": "node --check app.js",
+    "dev": "vercel dev --listen 5173",
+    "dev:static": "python -m http.server 5173",
+    "deploy": "vercel",
+    "deploy:prod": "vercel --prod"
+  },
+  "keywords": [
+    "letters",
+    "static",
+    "vercel"
+  ],
+  "license": "UNLICENSED"
+}

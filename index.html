@@ -26,8 +26,8 @@
       <section class="workspace" id="compose" aria-label="Compose letter">
         <form class="panel compose-panel" id="letterForm">
           <div class="section-title">
-            <h1>Compose Your Letter</h1>
-            <p>Express your thoughts with elegance</p>
+            <h1 id="formTitle">Compose Your Letter</h1>
+            <p id="formSubtitle">Express your thoughts with elegance</p>
           </div>
 
           <label>
@@ -57,14 +57,15 @@
             <input id="metaInput" name="meta" type="text" placeholder="Today, from my heart" autocomplete="off" />
           </label>
 
-          <div class="consent">
+          <div class="consent" id="consentWrap">
             <input id="agreeInput" type="checkbox" />
             <label for="agreeInput">I agree to keep this letter in my letters wall</label>
           </div>
 
           <div class="actions">
-            <button class="primary" type="submit">Post to Letters Wall</button>
+            <button class="primary" type="submit" id="submitButton">Post to Letters Wall</button>
             <button class="ghost" type="button" id="newButton">New</button>
+            <button class="ghost is-hidden" type="button" id="cancelEditButton">Cancel Edit</button>
           </div>
 
           <div class="file-actions" aria-label="JSON actions">
@@ -110,6 +111,13 @@
           </div>
           <span id="letterCount">0 letters</span>
         </div>
+        <div class="wall-tools">
+          <label class="search-field">
+            <span>Search letters</span>
+            <input id="wallSearchInput" type="search" placeholder="Search by name, recipient, or message..." autocomplete="off" />
+          </label>
+          <a class="wall-compose-link" href="#/compose">New Letter</a>
+        </div>
         <div class="letters-grid" id="lettersGrid"></div>
       </section>
 
@@ -144,13 +152,20 @@
 
     <template id="letterCardTemplate">
       <article class="letter-card">
-        <button class="delete-card" type="button" aria-label="Delete letter">×</button>
+        <div class="card-topline">
+          <span class="edited-badge is-hidden">Edited</span>
+        </div>
         <p class="card-to"></p>
         <p class="card-message"></p>
         <footer>
           <span class="card-name"></span>
           <time class="card-date"></time>
         </footer>
+        <div class="card-actions">
+          <button class="card-action view-card" type="button">View</button>
+          <button class="card-action edit-card" type="button">Edit</button>
+          <button class="card-action danger delete-card" type="button">Delete</button>
+        </div>
       </article>
     </template>
 

@@ -4,6 +4,8 @@ const LETTER_SCHEMA_VERSION = 1;
 
 const elements = {
   form: document.querySelector("#letterForm"),
+  formTitle: document.querySelector("#formTitle"),
+  formSubtitle: document.querySelector("#formSubtitle"),
   to: document.querySelector("#toInput"),
   message: document.querySelector("#messageInput"),
   closing: document.querySelector("#closingInput"),
@@ -17,10 +19,14 @@ const elements = {
   previewMessage: document.querySelector("#previewMessage"),
   previewClosing: document.querySelector("#previewClosing"),
   previewName: document.querySelector("#previewName"),
+  wallSearchInput: document.querySelector("#wallSearchInput"),
   lettersGrid: document.querySelector("#lettersGrid"),
   letterCount: document.querySelector("#letterCount"),
   template: document.querySelector("#letterCardTemplate"),
+  submitButton: document.querySelector("#submitButton"),
   newButton: document.querySelector("#newButton"),
+  cancelEditButton: document.querySelector("#cancelEditButton"),
+  consentWrap: document.querySelector("#consentWrap"),
   downloadImageButton: document.querySelector("#downloadImageButton"),
   openJsonButton: document.querySelector("#openJsonButton"),
   saveJsonButton: document.querySelector("#saveJsonButton"),
@@ -49,6 +55,7 @@ const elements = {
 let letters = [];
 let fileHandle = null;
 let activeViewLetter = null;
+let editingLetterId = null;
 
 const todayText = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -111,6 +118,16 @@ function createLetterFromDraft(draft) {
   });
 }
 
+function updateLetterFromDraft(letter, draft) {
+  return normalizeLetter({
+    ...letter,
+    ...draft,
+    id: letter.id,
+    createdAt: letter.createdAt,
+    updatedAt: createTimestamp(),
+  });
+}
+
 function readJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -158,6 +175,10 @@ function setForm(draft) {
   elements.name.value = draft.name || "";
   elements.meta.value = draft.meta || `Today, from my heart - ${todayText}`;
   updatePreview();
+}
+
+function findLetterById(letterId) {
+  return letters.find((letter) => letter.id === letterId);
 }
 
 function splitMeta(meta) {
@@ -215,6 +236,26 @@ function setVisibleSection(sectionName) {
   elements.letterRouteSection.classList.toggle("is-hidden", sectionName !== "letter");
 }
 
+function setEditMode(letter = null) {
+  editingLetterId = letter ? letter.id : null;
+  const isEditing = Boolean(letter);
+
+  elements.formTitle.textContent = isEditing ? "Edit Your Letter" : "Compose Your Letter";
+  elements.formSubtitle.textContent = isEditing
+    ? "Make a gentle change, then save it back to your wall"
+    : "Express your thoughts with elegance";
+  elements.submitButton.textContent = isEditing ? "Save Changes" : "Post to Letters Wall";
+  elements.newButton.classList.toggle("is-hidden", isEditing);
+  elements.cancelEditButton.classList.toggle("is-hidden", !isEditing);
+  elements.consentWrap.classList.toggle("is-hidden", isEditing);
+
+  if (isEditing) {
+    elements.agree.checked = true;
+  } else {
+    elements.agree.checked = false;
+  }
+}
+
 function getLetterUrl(letterId) {
   const url = new URL(window.location.href);
   url.hash = `#/letter/${encodeURIComponent(letterId)}`;
@@ -238,13 +279,14 @@ function renderViewPaper(letter) {
 }
 
 function renderLetterRoute(route) {
-  const letter = letters.find((item) => item.id === route.id);
+  const letter = findLetterById(route.id);
 
   setVisibleSection("letter");
   setActiveRouteLink("");
   activeViewLetter = letter || null;
 
   if (!letter) {
+    setEditMode(null);
     elements.viewPaperWrap.classList.add("is-hidden");
     setRouteActionsVisible(false);
     elements.routeMode.textContent = "Not found";
@@ -258,6 +300,16 @@ function renderLetterRoute(route) {
   }
 
   const isEditRoute = route.name === "letter-edit";
+  if (isEditRoute) {
+    setVisibleSection("compose");
+    setActiveRouteLink("");
+    setEditMode(letter);
+    setForm(letter);
+    elements.message.focus();
+    return;
+  }
+
+  setEditMode(null);
   elements.viewPaperWrap.classList.toggle("is-hidden", isEditRoute);
   setRouteActionsVisible(!isEditRoute);
   renderViewPaper(letter);
@@ -287,12 +339,14 @@ function renderRoute() {
   }
 
   if (route.name === "compose") {
+    setEditMode(null);
     setVisibleSection("compose");
     setActiveRouteLink("compose");
     return;
   }
 
   if (route.name === "wall") {
+    setEditMode(null);
     setVisibleSection("wall");
     setActiveRouteLink("wall");
     return;
@@ -305,6 +359,7 @@ function renderRoute() {
 
   setVisibleSection("letter");
   setActiveRouteLink("");
+  setEditMode(null);
   activeViewLetter = null;
   elements.viewPaperWrap.classList.add("is-hidden");
   setRouteActionsVisible(false);
@@ -368,27 +423,63 @@ function drawRoundRect(ctx, x, y, width, height, radius) {
 
 function renderLetters() {
   elements.lettersGrid.innerHTML = "";
-  elements.letterCount.textContent = `${letters.length} ${letters.length === 1 ? "letter" : "letters"}`;
+  const query = elements.wallSearchInput.value.trim().toLowerCase();
+  const filteredLetters = letters.filter((letter) =>
+    [letter.to, letter.message, letter.closing, letter.name, letter.meta]
+      .join(" ")
+      .toLowerCase()
+      .includes(query),
+  );
+  const countText = `${letters.length} ${letters.length === 1 ? "letter" : "letters"}`;
+  elements.letterCount.textContent = query ? `${filteredLetters.length} of ${countText}` : countText;
 
-  if (!letters.length) {
-    const empty = document.createElement("p");
+  if (!letters.length || !filteredLetters.length) {
+    const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.textContent = "No letters yet. Write the first one above.";
+    const title = document.createElement("h3");
+    const message = document.createElement("p");
+    const action = document.createElement("a");
+
+    title.textContent = query ? "No matching letters" : "No letters yet";
+    message.textContent = query
+      ? "Try another name, recipient, location, or phrase from the message."
+      : "Start with a small note. Your saved letters will appear here.";
+    action.textContent = query ? "Clear search" : "Write a letter";
+    action.href = query ? "#/wall" : "#/compose";
+    action.addEventListener("click", (event) => {
+      if (!query) return;
+      event.preventDefault();
+      elements.wallSearchInput.value = "";
+      renderLetters();
+      elements.wallSearchInput.focus();
+    });
+
+    empty.append(title, message, action);
     elements.lettersGrid.append(empty);
     return;
   }
 
-  letters
+  filteredLetters
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .forEach((letter) => {
       const card = elements.template.content.firstElementChild.cloneNode(true);
+      const editedBadge = card.querySelector(".edited-badge");
       card.querySelector(".card-to").textContent = `Dear ${letter.to || "..."}`;
       card.querySelector(".card-message").textContent = letter.message || "";
       card.querySelector(".card-name").textContent = letter.name || "Anonymous";
       card.querySelector(".card-date").textContent = new Intl.DateTimeFormat("vi-VN").format(new Date(letter.createdAt));
       card.querySelector(".card-date").dateTime = letter.createdAt;
+      editedBadge.classList.toggle("is-hidden", !letter.updatedAt);
+      card.querySelector(".view-card").addEventListener("click", () => {
+        location.hash = `#/letter/${encodeURIComponent(letter.id)}`;
+      });
+      card.querySelector(".edit-card").addEventListener("click", () => {
+        location.hash = `#/letter/${encodeURIComponent(letter.id)}/edit`;
+      });
       card.querySelector(".delete-card").addEventListener("click", () => {
+        const confirmed = window.confirm("Delete this letter? This cannot be undone.");
+        if (!confirmed) return;
         letters = letters.filter((item) => item.id !== letter.id);
         persistLetters();
         showStatus("Letter removed.");
@@ -652,6 +743,21 @@ elements.form.addEventListener("submit", (event) => {
     return;
   }
 
+  if (editingLetterId) {
+    const letter = findLetterById(editingLetterId);
+    if (!letter) {
+      showStatus("This letter could not be found.");
+      return;
+    }
+
+    letters = letters.map((item) => (item.id === editingLetterId ? updateLetterFromDraft(item, draft) : item));
+    const updatedLetterId = editingLetterId;
+    persistLetters();
+    showStatus("Letter updated.");
+    location.hash = `#/letter/${encodeURIComponent(updatedLetterId)}`;
+    return;
+  }
+
   if (!elements.agree.checked) {
     showStatus("Please agree before keeping this letter on the wall.");
     elements.agree.focus();
@@ -667,11 +773,19 @@ elements.form.addEventListener("submit", (event) => {
 });
 
 elements.newButton.addEventListener("click", () => {
+  setEditMode(null);
   setForm(createEmptyDraft());
   elements.agree.checked = false;
   showStatus("Fresh paper is ready.");
 });
 
+elements.cancelEditButton.addEventListener("click", () => {
+  const letterId = editingLetterId;
+  setEditMode(null);
+  location.hash = letterId ? `#/letter/${encodeURIComponent(letterId)}` : "#/wall";
+});
+
+elements.wallSearchInput.addEventListener("input", renderLetters);
 elements.downloadImageButton.addEventListener("click", () => downloadLetterImage());
 elements.downloadViewImageButton.addEventListener("click", () => {
   if (activeViewLetter) downloadLetterImage(activeViewLetter);
