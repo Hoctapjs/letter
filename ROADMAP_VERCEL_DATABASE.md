@@ -50,7 +50,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Dam bao chay local duoc bang Vercel/dev server.
 - Giu app van chay duoc tren IIS/static server.
 
-## Buoc 7: Chon va cau hinh database
+## Buoc 7: Chon va cau hinh database - Done
 
 - Chon Neon Postgres/Vercel Postgres/Supabase.
 - Them bien moi truong:

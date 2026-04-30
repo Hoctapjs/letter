@@ -56,3 +56,12 @@ npm run deploy:prod
 - `web.config` is kept for IIS MIME/default document support.
 - `vercel.json` configures static response headers for Vercel.
 - Letter data is still local/browser-based until the database/API steps are implemented.
+
+## Database Prep
+
+Database setup files are in [database/](database/):
+
+- `database/001_create_letters.sql`
+- `database/README.md`
+
+Copy `.env.example` to `.env.local` for local API testing later, or add the same variables in Vercel Dashboard.
