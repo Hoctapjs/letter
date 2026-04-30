@@ -1,6 +1,7 @@
-const STORAGE_KEY = "dearLetters.items";
 const DRAFT_KEY = "dearLetters.draft";
+const TOKEN_STORAGE_KEY = "dearLetters.editTokens";
 const LETTER_SCHEMA_VERSION = 1;
+const API_BASE = "/api/letters";
 
 const elements = {
   form: document.querySelector("#letterForm"),
@@ -109,25 +110,6 @@ function normalizeLettersPayload(data) {
   return imported.map((letter, index) => normalizeLetter(letter, index));
 }
 
-function createLetterFromDraft(draft) {
-  return normalizeLetter({
-    ...draft,
-    id: createId(),
-    createdAt: createTimestamp(),
-    updatedAt: null,
-  });
-}
-
-function updateLetterFromDraft(letter, draft) {
-  return normalizeLetter({
-    ...letter,
-    ...draft,
-    id: letter.id,
-    createdAt: letter.createdAt,
-    updatedAt: createTimestamp(),
-  });
-}
-
 function readJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -141,21 +123,105 @@ function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-function readStoredLetters() {
-  const stored = readJson(STORAGE_KEY, null);
-  if (!stored) return null;
-  try {
-    return normalizeLettersPayload(stored);
-  } catch {
-    return null;
-  }
+function readEditTokens() {
+  return readJson(TOKEN_STORAGE_KEY, {});
 }
 
-function writeStoredLetters(items) {
-  writeJson(STORAGE_KEY, {
-    schemaVersion: LETTER_SCHEMA_VERSION,
-    letters: items.map((letter, index) => normalizeLetter(letter, index)),
+function writeEditTokens(tokens) {
+  writeJson(TOKEN_STORAGE_KEY, tokens);
+}
+
+function getEditToken(letterId) {
+  return readEditTokens()[letterId] || "";
+}
+
+function saveEditToken(letterId, editToken) {
+  if (!letterId || !editToken) return;
+  const tokens = readEditTokens();
+  tokens[letterId] = editToken;
+  writeEditTokens(tokens);
+}
+
+function removeEditToken(letterId) {
+  const tokens = readEditTokens();
+  delete tokens[letterId];
+  writeEditTokens(tokens);
+}
+
+async function apiRequest(path = "", options = {}) {
+  const { headers = {}, ...requestOptions } = options;
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...requestOptions,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
   });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(data.error && data.error.message ? data.error.message : "API request failed.");
+    error.statusCode = response.status;
+    error.details = data.error && data.error.details;
+    throw error;
+  }
+
+  return data;
+}
+
+async function fetchLettersFromApi() {
+  const data = await apiRequest();
+  return normalizeLettersPayload(data);
+}
+
+async function fetchLetterByIdFromApi(letterId) {
+  const data = await apiRequest(`/${encodeURIComponent(letterId)}`);
+  return normalizeLetter(data.letter);
+}
+
+async function createLetterViaApi(draft) {
+  const data = await apiRequest("", {
+    method: "POST",
+    body: JSON.stringify(draft),
+  });
+  const letter = normalizeLetter(data.letter);
+  saveEditToken(letter.id, data.editToken);
+  return letter;
+}
+
+async function updateLetterViaApi(letterId, draft) {
+  const editToken = getEditToken(letterId);
+  if (!editToken) {
+    const error = new Error("Missing edit token for this letter in this browser.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const data = await apiRequest(`/${encodeURIComponent(letterId)}`, {
+    method: "PATCH",
+    headers: {
+      "X-Edit-Token": editToken,
+    },
+    body: JSON.stringify(draft),
+  });
+  return normalizeLetter(data.letter);
+}
+
+async function deleteLetterViaApi(letterId) {
+  const editToken = getEditToken(letterId);
+  if (!editToken) {
+    const error = new Error("Missing edit token for this letter in this browser.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  await apiRequest(`/${encodeURIComponent(letterId)}`, {
+    method: "DELETE",
+    headers: {
+      "X-Edit-Token": editToken,
+    },
+  });
+  removeEditToken(letterId);
 }
 
 function getDraftFromForm() {
@@ -198,24 +264,27 @@ function splitMeta(meta) {
 
 function parseRoute(hash = window.location.hash) {
   const cleanHash = hash.replace(/^#\/?/, "").trim();
-  const parts = cleanHash.split("/").filter(Boolean);
+  const [pathPart, queryPart = ""] = cleanHash.split("?");
+  const params = new URLSearchParams(queryPart);
+  const parts = pathPart.split("/").filter(Boolean);
 
   if (!parts.length || parts[0] === "compose") {
-    return { name: "compose", id: null };
+    return { name: "compose", id: null, token: "" };
   }
 
   if (parts[0] === "wall") {
-    return { name: "wall", id: null };
+    return { name: "wall", id: null, token: "" };
   }
 
   if (parts[0] === "letter" && parts[1]) {
     return {
       name: parts[2] === "edit" ? "letter-edit" : "letter-view",
       id: decodeURIComponent(parts[1]),
+      token: params.get("token") || "",
     };
   }
 
-  return { name: "not-found", id: null };
+  return { name: "not-found", id: null, token: "" };
 }
 
 function setActiveRouteLink(routeName) {
@@ -278,11 +347,32 @@ function renderViewPaper(letter) {
   elements.viewName.textContent = letter.name || "";
 }
 
-function renderLetterRoute(route) {
-  const letter = findLetterById(route.id);
+async function renderLetterRoute(route) {
+  let letter = findLetterById(route.id);
 
   setVisibleSection("letter");
   setActiveRouteLink("");
+
+  if (route.token) {
+    saveEditToken(route.id, route.token);
+  }
+
+  if (!letter) {
+    elements.viewPaperWrap.classList.add("is-hidden");
+    setRouteActionsVisible(false);
+    elements.routeMode.textContent = "Loading";
+    elements.routeTitle.textContent = "Loading letter";
+    elements.routeDescription.textContent = "Fetching this letter from the database.";
+
+    try {
+      letter = await fetchLetterByIdFromApi(route.id);
+      letters = [letter, ...letters.filter((item) => item.id !== letter.id)];
+      renderLetters();
+    } catch {
+      letter = null;
+    }
+  }
+
   activeViewLetter = letter || null;
 
   if (!letter) {
@@ -325,7 +415,7 @@ function renderLetterRoute(route) {
   elements.routeSecondaryLink.href = isEditRoute ? "#/wall" : `#/letter/${encodeURIComponent(letter.id)}/edit`;
 }
 
-function renderRoute() {
+async function renderRoute() {
   const route = parseRoute();
 
   if (window.location.hash === "#compose") {
@@ -353,7 +443,7 @@ function renderRoute() {
   }
 
   if (route.name === "letter-view" || route.name === "letter-edit") {
-    renderLetterRoute(route);
+    await renderLetterRoute(route);
     return;
   }
 
@@ -388,7 +478,6 @@ function updatePreview() {
 
 function persistLetters() {
   letters = letters.map((letter, index) => normalizeLetter(letter, index));
-  writeStoredLetters(letters);
   renderLetters();
   renderRoute();
 }
@@ -480,9 +569,15 @@ function renderLetters() {
       card.querySelector(".delete-card").addEventListener("click", () => {
         const confirmed = window.confirm("Delete this letter? This cannot be undone.");
         if (!confirmed) return;
-        letters = letters.filter((item) => item.id !== letter.id);
-        persistLetters();
-        showStatus("Letter removed.");
+        deleteLetterViaApi(letter.id)
+          .then(() => {
+            letters = letters.filter((item) => item.id !== letter.id);
+            persistLetters();
+            showStatus("Letter removed.");
+          })
+          .catch((error) => {
+            window.alert(error.message || "Could not delete this letter.");
+          });
       });
       card.addEventListener("click", (event) => {
         if (event.target.closest("button")) return;
@@ -493,21 +588,17 @@ function renderLetters() {
 }
 
 async function loadInitialLetters() {
-  const savedLetters = readStoredLetters();
-  if (Array.isArray(savedLetters)) {
-    letters = savedLetters;
-    writeStoredLetters(letters);
-    return;
-  }
-
   try {
-    const response = await fetch("letters.json", { cache: "no-store" });
-    if (!response.ok) throw new Error("No seed file.");
-    const data = await response.json();
-    letters = normalizeLettersPayload(data);
-    writeStoredLetters(letters);
+    letters = await fetchLettersFromApi();
   } catch {
-    letters = [];
+    try {
+      const response = await fetch("letters.json", { cache: "no-store" });
+      if (!response.ok) throw new Error("No seed file.");
+      const data = await response.json();
+      letters = normalizeLettersPayload(data);
+    } catch {
+      letters = [];
+    }
   }
 }
 
@@ -586,9 +677,14 @@ async function openJsonWithPicker() {
 async function importJsonFile() {
   try {
     const raw = await openJsonWithPicker();
-    letters = normalizeImportedData(JSON.parse(raw));
+    const importedLetters = normalizeImportedData(JSON.parse(raw));
+    const createdLetters = [];
+    for (const letter of importedLetters) {
+      createdLetters.push(await createLetterViaApi(letter));
+    }
+    letters = await fetchLettersFromApi();
     persistLetters();
-    showStatus("JSON file loaded.");
+    showStatus(`${createdLetters.length} letters imported.`);
   } catch (error) {
     showStatus(error.message || "Could not open JSON file.");
   }
@@ -733,7 +829,7 @@ async function copyActiveLetterLink() {
 
 elements.form.addEventListener("input", updatePreview);
 
-elements.form.addEventListener("submit", (event) => {
+elements.form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const draft = getDraftFromForm();
 
@@ -750,11 +846,19 @@ elements.form.addEventListener("submit", (event) => {
       return;
     }
 
-    letters = letters.map((item) => (item.id === editingLetterId ? updateLetterFromDraft(item, draft) : item));
-    const updatedLetterId = editingLetterId;
-    persistLetters();
-    showStatus("Letter updated.");
-    location.hash = `#/letter/${encodeURIComponent(updatedLetterId)}`;
+    elements.submitButton.disabled = true;
+    try {
+      const updatedLetter = await updateLetterViaApi(editingLetterId, draft);
+      const updatedLetterId = editingLetterId;
+      letters = letters.map((item) => (item.id === editingLetterId ? updatedLetter : item));
+      persistLetters();
+      showStatus("Letter updated.");
+      location.hash = `#/letter/${encodeURIComponent(updatedLetterId)}`;
+    } catch (error) {
+      showStatus(error.message || "Could not update this letter.");
+    } finally {
+      elements.submitButton.disabled = false;
+    }
     return;
   }
 
@@ -764,12 +868,19 @@ elements.form.addEventListener("submit", (event) => {
     return;
   }
 
-  letters.push(createLetterFromDraft(draft));
-
-  persistLetters();
-  showStatus("Letter saved.");
-  elements.agree.checked = false;
-  location.hash = "#/wall";
+  elements.submitButton.disabled = true;
+  try {
+    const createdLetter = await createLetterViaApi(draft);
+    letters = [createdLetter, ...letters.filter((letter) => letter.id !== createdLetter.id)];
+    persistLetters();
+    showStatus("Letter saved.");
+    elements.agree.checked = false;
+    location.hash = "#/wall";
+  } catch (error) {
+    showStatus(error.message || "Could not save this letter.");
+  } finally {
+    elements.submitButton.disabled = false;
+  }
 });
 
 elements.newButton.addEventListener("click", () => {

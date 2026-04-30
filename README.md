@@ -55,7 +55,7 @@ npm run deploy:prod
 - The app currently uses hash routes such as `#/compose`, `#/wall`, and `#/letter/:id`, so it works on static hosting and IIS without rewrite rules.
 - `web.config` is kept for IIS MIME/default document support.
 - `vercel.json` configures static response headers for Vercel.
-- Letter data is still local/browser-based until the database/API steps are implemented.
+- Letter data is stored through the API/database. The browser keeps only draft text and edit tokens for letters created from that browser.
 
 ## Database Prep
 
@@ -81,3 +81,5 @@ Vercel serverless API files live in [api/](api/):
 - Header: `X-Edit-Token: <token>`
 - Query string: `?token=<token>`
 - JSON body: `"editToken": "<token>"`
+
+The frontend now calls these API endpoints directly. `localStorage` is used for draft recovery and locally held edit tokens, not as the source of letter data.

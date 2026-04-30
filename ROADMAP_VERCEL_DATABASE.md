@@ -78,7 +78,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Link sua rieng tu: `/letter/:id/edit?token=...`.
 - `PATCH` va `DELETE` bat buoc token hop le.
 
-## Buoc 10: Ket noi frontend voi API
+## Buoc 10: Ket noi frontend voi API - Done
 
 - `Post` goi API tao thu.
 - `Wall` goi API lay danh sach thu.
