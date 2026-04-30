@@ -59,7 +59,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Tao migration/table `letters`.
 - Viet tai lieu cau hinh `.env.example`.
 
-## Buoc 8: Tao API backend
+## Buoc 8: Tao API backend - Done
 
 - Tao API:
   - `POST /api/letters`

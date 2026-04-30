@@ -4,7 +4,7 @@
   "private": true,
   "description": "A lightweight letter writing app prepared for Vercel static hosting.",
   "scripts": {
-    "check": "node --check app.js",
+    "check": "node --check app.js && node --check api/_lib/db.js && node --check api/_lib/http.js && node --check api/_lib/letters.js && node --check api/letters/index.js && node --check api/letters/[id].js",
     "dev": "vercel dev --listen 5173",
     "dev:static": "python -m http.server 5173",
     "deploy": "vercel",
@@ -15,5 +15,8 @@
     "static",
     "vercel"
   ],
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "postgres": "^3.4.0"
+  }
 }

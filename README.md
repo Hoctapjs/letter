@@ -65,3 +65,15 @@ Database setup files are in [database/](database/):
 - `database/README.md`
 
 Copy `.env.example` to `.env.local` for local API testing later, or add the same variables in Vercel Dashboard.
+
+## API Backend
+
+Vercel serverless API files live in [api/](api/):
+
+- `GET /api/letters`
+- `POST /api/letters`
+- `GET /api/letters/:id`
+- `PATCH /api/letters/:id`
+- `DELETE /api/letters/:id`
+
+At step 8, `GET` and `POST` are database-backed through the generic `postgres` package and `DATABASE_URL`. `POST` already returns an `editToken` and stores only its hash. `PATCH` and `DELETE` exist but return a clear `501` until token verification is wired in step 9.
