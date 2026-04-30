@@ -83,3 +83,10 @@ Vercel serverless API files live in [api/](api/):
 - JSON body: `"editToken": "<token>"`
 
 The frontend now calls these API endpoints directly. `localStorage` is used for draft recovery and locally held edit tokens, not as the source of letter data.
+
+After creating a letter, the UI shows:
+
+- a public view link
+- a private edit link containing the edit token
+
+Keep the private edit link restricted. Anyone with it can edit or delete that letter.

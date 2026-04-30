@@ -150,6 +150,40 @@
       </section>
     </main>
 
+    <div class="share-modal is-hidden" id="shareModal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+      <div class="share-dialog">
+        <div class="share-header">
+          <div>
+            <p class="route-eyebrow">Letter saved</p>
+            <h2 id="shareModalTitle">Share your letter</h2>
+          </div>
+          <button class="share-close" type="button" id="closeShareModalButton" aria-label="Close">×</button>
+        </div>
+
+        <div class="share-field">
+          <label for="viewLinkInput">View link</label>
+          <div class="share-row">
+            <input id="viewLinkInput" type="text" readonly />
+            <button type="button" id="copyViewLinkButton">Copy</button>
+          </div>
+        </div>
+
+        <div class="share-field private">
+          <label for="editLinkInput">Private edit link</label>
+          <div class="share-row">
+            <input id="editLinkInput" type="text" readonly />
+            <button type="button" id="copyEditLinkButton">Copy</button>
+          </div>
+          <p>Anyone with this private edit link can edit or delete the letter.</p>
+        </div>
+
+        <div class="share-actions">
+          <a class="route-button primary-link" id="openCreatedLetterLink" href="#/wall">Open Letter</a>
+          <button class="route-button" type="button" id="doneShareModalButton">Done</button>
+        </div>
+      </div>
+    </div>
+
     <template id="letterCardTemplate">
       <article class="letter-card">
         <div class="card-topline">

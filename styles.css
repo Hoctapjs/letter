@@ -610,6 +610,106 @@ textarea:focus {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
 }
 
+.share-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(38, 33, 76, 0.44);
+  backdrop-filter: blur(8px);
+}
+
+.share-dialog {
+  width: min(620px, 100%);
+  padding: clamp(22px, 4vw, 30px);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.share-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.share-header h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.share-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: #555b70;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.share-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.share-field label {
+  display: block;
+  margin: 0;
+  color: #555965;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.share-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.share-row input {
+  min-width: 0;
+}
+
+.share-row button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: #575b67;
+  background: rgba(255, 255, 255, 0.72);
+  font-weight: 800;
+}
+
+.share-field.private {
+  padding: 14px;
+  border: 1px solid rgba(214, 90, 104, 0.22);
+  border-radius: 12px;
+  background: rgba(214, 90, 104, 0.07);
+}
+
+.share-field.private p {
+  margin: 0;
+  color: #8a4d58;
+  font-size: 0.92rem;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 @media (max-width: 920px) {
   .topbar,
   .workspace,
@@ -661,5 +761,18 @@ textarea:focus {
 
   .paper {
     padding: 28px 20px;
+  }
+
+  .share-row,
+  .share-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .share-row {
+    display: grid;
+  }
+
+  .share-actions {
+    justify-content: stretch;
   }
 }

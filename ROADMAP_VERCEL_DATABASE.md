@@ -87,7 +87,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - `Delete` goi API xoa thu.
 - `localStorage` chi con dung cho draft va token vua tao.
 
-## Buoc 11: Link chia se va UX sau khi tao thu
+## Buoc 11: Link chia se va UX sau khi tao thu - Done
 
 - Sau khi tao thu, hien thi modal/khu ket qua:
   - Link xem thu.

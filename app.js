@@ -50,6 +50,14 @@ const elements = {
   viewName: document.querySelector("#viewName"),
   copyLinkButton: document.querySelector("#copyLinkButton"),
   downloadViewImageButton: document.querySelector("#downloadViewImageButton"),
+  shareModal: document.querySelector("#shareModal"),
+  viewLinkInput: document.querySelector("#viewLinkInput"),
+  editLinkInput: document.querySelector("#editLinkInput"),
+  copyViewLinkButton: document.querySelector("#copyViewLinkButton"),
+  copyEditLinkButton: document.querySelector("#copyEditLinkButton"),
+  closeShareModalButton: document.querySelector("#closeShareModalButton"),
+  doneShareModalButton: document.querySelector("#doneShareModalButton"),
+  openCreatedLetterLink: document.querySelector("#openCreatedLetterLink"),
   navLinks: document.querySelectorAll("[data-route-link]"),
 };
 
@@ -57,6 +65,7 @@ let letters = [];
 let fileHandle = null;
 let activeViewLetter = null;
 let editingLetterId = null;
+let lastCreatedShare = null;
 
 const todayText = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -186,7 +195,10 @@ async function createLetterViaApi(draft) {
   });
   const letter = normalizeLetter(data.letter);
   saveEditToken(letter.id, data.editToken);
-  return letter;
+  return {
+    letter,
+    editToken: data.editToken,
+  };
 }
 
 async function updateLetterViaApi(letterId, draft) {
@@ -328,6 +340,12 @@ function setEditMode(letter = null) {
 function getLetterUrl(letterId) {
   const url = new URL(window.location.href);
   url.hash = `#/letter/${encodeURIComponent(letterId)}`;
+  return url.toString();
+}
+
+function getEditLetterUrl(letterId, editToken) {
+  const url = new URL(window.location.href);
+  url.hash = `#/letter/${encodeURIComponent(letterId)}/edit?token=${encodeURIComponent(editToken)}`;
   return url.toString();
 }
 
@@ -680,7 +698,8 @@ async function importJsonFile() {
     const importedLetters = normalizeImportedData(JSON.parse(raw));
     const createdLetters = [];
     for (const letter of importedLetters) {
-      createdLetters.push(await createLetterViaApi(letter));
+      const created = await createLetterViaApi(letter);
+      createdLetters.push(created.letter);
     }
     letters = await fetchLettersFromApi();
     persistLetters();
@@ -808,23 +827,48 @@ async function copyActiveLetterLink() {
   if (!activeViewLetter) return;
 
   const link = getLetterUrl(activeViewLetter.id);
-  const originalLabel = elements.copyLinkButton.textContent;
+  await copyTextWithButtonFeedback(link, elements.copyLinkButton);
+}
+
+async function copyTextWithButtonFeedback(text, button) {
+  const originalLabel = button.textContent;
   try {
-    await navigator.clipboard.writeText(link);
+    await navigator.clipboard.writeText(text);
   } catch {
     const fallbackInput = document.createElement("input");
-    fallbackInput.value = link;
+    fallbackInput.value = text;
     document.body.append(fallbackInput);
     fallbackInput.select();
     document.execCommand("copy");
     fallbackInput.remove();
   }
 
-  elements.copyLinkButton.textContent = "Copied";
-  window.clearTimeout(copyActiveLetterLink.timer);
-  copyActiveLetterLink.timer = window.setTimeout(() => {
-    elements.copyLinkButton.textContent = originalLabel;
+  button.textContent = "Copied";
+  window.clearTimeout(button.copyTimer);
+  button.copyTimer = window.setTimeout(() => {
+    button.textContent = originalLabel;
   }, 1800);
+}
+
+function openShareModal(letter, editToken) {
+  const viewLink = getLetterUrl(letter.id);
+  const editLink = getEditLetterUrl(letter.id, editToken);
+
+  lastCreatedShare = {
+    letter,
+    viewLink,
+    editLink,
+  };
+
+  elements.viewLinkInput.value = viewLink;
+  elements.editLinkInput.value = editLink;
+  elements.openCreatedLetterLink.href = `#/letter/${encodeURIComponent(letter.id)}`;
+  elements.shareModal.classList.remove("is-hidden");
+  elements.copyViewLinkButton.focus();
+}
+
+function closeShareModal() {
+  elements.shareModal.classList.add("is-hidden");
 }
 
 elements.form.addEventListener("input", updatePreview);
@@ -870,11 +914,13 @@ elements.form.addEventListener("submit", async (event) => {
 
   elements.submitButton.disabled = true;
   try {
-    const createdLetter = await createLetterViaApi(draft);
+    const created = await createLetterViaApi(draft);
+    const createdLetter = created.letter;
     letters = [createdLetter, ...letters.filter((letter) => letter.id !== createdLetter.id)];
     persistLetters();
     showStatus("Letter saved.");
     elements.agree.checked = false;
+    openShareModal(createdLetter, created.editToken);
     location.hash = "#/wall";
   } catch (error) {
     showStatus(error.message || "Could not save this letter.");
@@ -902,6 +948,22 @@ elements.downloadViewImageButton.addEventListener("click", () => {
   if (activeViewLetter) downloadLetterImage(activeViewLetter);
 });
 elements.copyLinkButton.addEventListener("click", copyActiveLetterLink);
+elements.copyViewLinkButton.addEventListener("click", () => {
+  if (lastCreatedShare) copyTextWithButtonFeedback(lastCreatedShare.viewLink, elements.copyViewLinkButton);
+});
+elements.copyEditLinkButton.addEventListener("click", () => {
+  if (lastCreatedShare) copyTextWithButtonFeedback(lastCreatedShare.editLink, elements.copyEditLinkButton);
+});
+elements.closeShareModalButton.addEventListener("click", closeShareModal);
+elements.doneShareModalButton.addEventListener("click", closeShareModal);
+elements.shareModal.addEventListener("click", (event) => {
+  if (event.target === elements.shareModal) closeShareModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.shareModal.classList.contains("is-hidden")) {
+    closeShareModal();
+  }
+});
 elements.openJsonButton.addEventListener("click", importJsonFile);
 elements.saveJsonButton.addEventListener("click", () => {
   saveToPickedFile().catch((error) => showStatus(error.message || "Could not save JSON file."));
