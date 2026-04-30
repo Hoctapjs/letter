@@ -76,4 +76,8 @@ Vercel serverless API files live in [api/](api/):
 - `PATCH /api/letters/:id`
 - `DELETE /api/letters/:id`
 
-At step 8, `GET` and `POST` are database-backed through the generic `postgres` package and `DATABASE_URL`. `POST` already returns an `editToken` and stores only its hash. `PATCH` and `DELETE` exist but return a clear `501` until token verification is wired in step 9.
+`POST` returns an `editToken` once and stores only its hash. Use that token for `PATCH` and `DELETE` through one of these options:
+
+- Header: `X-Edit-Token: <token>`
+- Query string: `?token=<token>`
+- JSON body: `"editToken": "<token>"`

@@ -21,6 +21,20 @@ function hashEditToken(editToken) {
   return crypto.createHmac("sha256", process.env.TOKEN_SECRET).update(editToken).digest("hex");
 }
 
+function verifyEditToken(editToken, editTokenHash) {
+  if (!editToken || !editTokenHash) return false;
+
+  const candidateHash = hashEditToken(editToken);
+  const candidateBuffer = Buffer.from(candidateHash, "hex");
+  const storedBuffer = Buffer.from(editTokenHash, "hex");
+
+  if (candidateBuffer.length !== storedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(candidateBuffer, storedBuffer);
+}
+
 function normalizeText(value, fallback = "") {
   if (value === undefined || value === null) return fallback;
   return String(value).trim();
@@ -90,4 +104,5 @@ module.exports = {
   hashEditToken,
   mapLetterRow,
   validateLetterPayload,
+  verifyEditToken,
 };

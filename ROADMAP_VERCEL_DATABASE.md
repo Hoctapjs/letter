@@ -70,7 +70,7 @@ Danh sach duoi day chia nho viec trien khai theo tung buoc. Khi muon lam phan na
 - Validate du lieu gui len.
 - Tra loi ro rang cho frontend.
 
-## Buoc 9: Them edit token
+## Buoc 9: Them edit token - Done
 
 - Khi tao thu, sinh `editToken`.
 - Database chi luu hash token.
