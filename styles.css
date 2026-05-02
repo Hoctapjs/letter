@@ -654,7 +654,7 @@ textarea:focus {
   justify-content: center;
   gap: 14px;
   width: min(680px, 100%);
-  margin: 16px auto 0;
+  margin: 18px auto 0;
   padding: 12px;
   border: 1px solid rgba(160, 200, 120, 0.34);
   border-radius: 12px;
@@ -699,6 +699,10 @@ textarea:focus {
 
 .music-player audio {
   display: none;
+}
+
+.music-player + .view-paper-wrap {
+  margin-top: 16px;
 }
 
 .route-actions {
