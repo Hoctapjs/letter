@@ -1,32 +1,38 @@
 # Icon assets needed
 
-Tất cả icon trong app hiện đã trỏ về file PNG. Các file trong `images/icons/` đang là placeholder được copy từ `images/writing.png`.
+Tat ca icon trong app hien da tro ve file PNG. Cac file placeholder co the duoc thay bang icon that bang cach ghi de dung ten file.
 
-Khi có icon thật, chỉ cần ghi đè đúng tên file bên dưới. Nên dùng PNG nền trong suốt, kích thước đề xuất `64x64` hoặc `128x128`, cùng một phong cách màu với theme `#FFFDF6`, `#FAF6E9`, `#DDEB9D`, `#A0C878`.
+Khuyen nghi:
+- PNG nen trong suot.
+- Kich thuoc canvas thong nhat, nen dung `64x64` hoac `128x128`.
+- Mau sac nen hop voi palette `#FFFDF6`, `#FAF6E9`, `#DDEB9D`, `#A0C878`.
 
-| File | Dùng ở đâu | Gợi ý hình |
+| File | Dung o dau | Goi y hinh |
 | --- | --- | --- |
-| `images/writing.png` | Logo header, favicon | Phong bì/lá thư kèm bút, icon chính của app |
-| `images/icons/home.png` | Nút Home, route lỗi về Home | Nhà đơn giản |
-| `images/icons/wall.png` | Nút Letters Wall, route lỗi về Letters Wall | Bảng/tường ghim thư |
-| `images/icons/post.png` | Nút Post to Letters Wall | Gửi thư/đăng thư |
-| `images/icons/save.png` | Nút Save Changes, Save JSON | Lưu nội dung |
-| `images/icons/new.png` | Nút New, New Letter | Tạo thư mới, dấu cộng hoặc tờ giấy mới |
-| `images/icons/cancel.png` | Nút Cancel Edit | Hủy/chấm x nhẹ |
-| `images/icons/open.png` | Nút Open JSON | Mở file/thư mục |
-| `images/icons/export.png` | Nút Export JSON | Xuất file, mũi tên đi ra |
-| `images/icons/download.png` | Download Letter, Download Image | Tải xuống |
-| `images/icons/back.png` | Back to wall | Mũi tên quay lại |
-| `images/icons/compose.png` | Compose, Open compose | Viết thư/bút |
-| `images/icons/edit.png` | Edit letter | Bút sửa |
-| `images/icons/link.png` | Copy Link | Mắt xích/liên kết |
-| `images/icons/copy.png` | Copy view/edit link trong modal | Hai tờ giấy/copy |
-| `images/icons/close.png` | Đóng modal | Dấu x |
-| `images/icons/view.png` | View, Open Letter | Mắt hoặc lá thư mở |
-| `images/icons/delete.png` | Delete | Thùng rác |
-| `images/icons/check.png` | Done | Dấu tick |
+| `images/writing.png` | Logo header, favicon | Phong bi/la thu kem but, icon chinh cua app |
+| `images/icons/home.png` | Nut Home, route loi ve Home | Nha don gian |
+| `images/icons/wall.png` | Nut Letters Wall, route loi ve Letters Wall | Bang/tuong ghim thu |
+| `images/icons/post.png` | Nut Post to Letters Wall | Gui thu/dang thu |
+| `images/icons/save.png` | Nut Save Changes, Save JSON | Luu noi dung |
+| `images/icons/new.png` | Nut New, New Letter | Tao thu moi, dau cong hoac to giay moi |
+| `images/icons/cancel.png` | Nut Cancel Edit, Clear search | Huy/dau x nhe |
+| `images/icons/open.png` | Nut Open JSON | Mo file/thu muc |
+| `images/icons/export.png` | Nut Export JSON | Xuat file, mui ten di ra |
+| `images/icons/download.png` | Download Letter, Download Image | Tai xuong |
+| `images/icons/back.png` | Back to wall | Mui ten quay lai |
+| `images/icons/compose.png` | Compose, Open compose, Write a letter | Viet thu/but |
+| `images/icons/edit.png` | Edit letter | But sua |
+| `images/icons/link.png` | Copy Link | Mat xich/lien ket |
+| `images/icons/copy.png` | Copy view/edit link trong modal | Hai to giay/copy |
+| `images/icons/close.png` | Dong modal | Dau x |
+| `images/icons/view.png` | View, Open Letter | Mat hoac la thu mo |
+| `images/icons/delete.png` | Delete | Thung rac |
+| `images/icons/check.png` | Done | Dau tick |
+| `images/icons/play.png` | Play music | Nut play tam giac |
+| `images/icons/pause.png` | Pause music | Nut pause hai vach doc |
+| `images/icons/music.png` | Du phong cho music label/badge | Not nhac |
 
-Lưu ý triển khai:
-- Không đổi tên file nếu không sửa lại đường dẫn trong `index.html` hoặc `app.js`.
-- Nên giữ tất cả icon cùng kích thước canvas để nút không bị lệch.
-- Nếu dùng icon nhiều màu, nên tránh quá rực để không phá palette nhẹ hiện tại.
+Luu y:
+- Khong doi ten file neu khong sua lai duong dan trong `index.html` hoac `app.js`.
+- Nen giu tat ca icon cung kich thuoc canvas de nut khong bi lech.
+- Neu dung icon nhieu mau, nen tranh qua ruc de khong pha palette nhe hien tai.

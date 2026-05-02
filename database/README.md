@@ -27,6 +27,7 @@ Open your database provider's SQL editor and run:
 
 ```text
 database/001_create_letters.sql
+database/002_add_letter_music.sql
 ```
 
 The migration creates:
@@ -34,6 +35,7 @@ The migration creates:
 - `letters`
 - `idx_letters_created_at`
 - `idx_letters_updated_at`
+- optional music columns on `letters`
 
 ## Table Shape
 
@@ -45,12 +47,17 @@ letters
 - closing
 - author_name
 - meta
+- music_id
+- music_title
+- music_url
 - edit_token_hash
 - created_at
 - updated_at
 ```
 
 `edit_token_hash` is required because the raw edit token should only be shown to the creator once. Later API steps will compare token hashes for edit/delete permission.
+
+Music fields are optional and default to empty strings so existing letters continue to work without a selected MP3 track.
 
 ## Vercel Configuration
 

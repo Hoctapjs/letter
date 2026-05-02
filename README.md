@@ -62,6 +62,7 @@ npm run deploy:prod
 Database setup files are in [database/](database/):
 
 - `database/001_create_letters.sql`
+- `database/002_add_letter_music.sql`
 - `database/README.md`
 
 Copy `.env.example` to `.env.local` for local API testing later, or add the same variables in Vercel Dashboard.
@@ -84,9 +85,23 @@ Vercel serverless API files live in [api/](api/):
 
 The frontend now calls these API endpoints directly. `localStorage` is used for draft recovery and locally held edit tokens, not as the source of letter data.
 
+Letter payloads support optional background music fields:
+
+- `musicId`
+- `musicTitle`
+- `musicUrl`
+
 After creating a letter, the UI shows:
 
 - a public view link
 - a private edit link containing the edit token
 
 Keep the private edit link restricted. Anyone with it can edit or delete that letter.
+
+## Music Assets
+
+MP3 background tracks live in [musics/](musics/). The track manifest is:
+
+- `musics/tracks.json`
+
+Each track should have a stable `id`, display `title`, optional `artist`, original `file`, and public `url`. Future letter records can store the selected track by `musicId`/`musicUrl`.

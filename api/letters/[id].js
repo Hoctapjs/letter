@@ -53,7 +53,7 @@ function getId(request) {
 async function getLetter(response, id) {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, to_name, message, closing, author_name, meta, created_at, updated_at
+    SELECT id, to_name, message, closing, author_name, meta, music_id, music_title, music_url, created_at, updated_at
     FROM letters
     WHERE id = ${id}
     LIMIT 1
@@ -94,9 +94,12 @@ async function updateLetter(request, response, id, body) {
       closing = ${letter.closing},
       author_name = ${letter.name},
       meta = ${letter.meta},
+      music_id = ${letter.musicId},
+      music_title = ${letter.musicTitle},
+      music_url = ${letter.musicUrl},
       updated_at = NOW()
     WHERE id = ${id}
-    RETURNING id, to_name, message, closing, author_name, meta, created_at, updated_at
+    RETURNING id, to_name, message, closing, author_name, meta, music_id, music_title, music_url, created_at, updated_at
   `;
 
   sendJson(response, 200, {

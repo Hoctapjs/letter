@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS letters (
   closing TEXT NOT NULL DEFAULT 'With love',
   author_name TEXT NOT NULL DEFAULT '',
   meta TEXT NOT NULL DEFAULT '',
+  music_id TEXT NOT NULL DEFAULT '',
+  music_title TEXT NOT NULL DEFAULT '',
+  music_url TEXT NOT NULL DEFAULT '',
   edit_token_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ

@@ -32,7 +32,7 @@ module.exports = async function handler(request, response) {
 async function listLetters(response) {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, to_name, message, closing, author_name, meta, created_at, updated_at
+    SELECT id, to_name, message, closing, author_name, meta, music_id, music_title, music_url, created_at, updated_at
     FROM letters
     ORDER BY created_at DESC
     LIMIT 100
@@ -56,6 +56,9 @@ async function createLetter(response, body) {
       closing,
       author_name,
       meta,
+      music_id,
+      music_title,
+      music_url,
       edit_token_hash
     )
     VALUES (
@@ -65,9 +68,12 @@ async function createLetter(response, body) {
       ${letter.closing},
       ${letter.name},
       ${letter.meta},
+      ${letter.musicId},
+      ${letter.musicTitle},
+      ${letter.musicUrl},
       ${editTokenHash}
     )
-    RETURNING id, to_name, message, closing, author_name, meta, created_at, updated_at
+    RETURNING id, to_name, message, closing, author_name, meta, music_id, music_title, music_url, created_at, updated_at
   `;
 
   sendJson(response, 201, {

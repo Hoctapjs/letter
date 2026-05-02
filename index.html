@@ -64,6 +64,13 @@
             <input id="metaInput" name="meta" type="text" placeholder="Today, from my heart" autocomplete="off" />
           </label>
 
+          <label>
+            <span>Background music</span>
+            <select id="musicSelect" name="music">
+              <option value="">No background music</option>
+            </select>
+          </label>
+
           <div class="consent" id="consentWrap">
             <input id="agreeInput" type="checkbox" />
             <label for="agreeInput">I agree to keep this letter in my letters wall</label>
@@ -171,6 +178,17 @@
               </div>
             </div>
           </article>
+          <div class="music-player is-hidden" id="viewMusicPlayer">
+            <button class="music-toggle" type="button" id="musicToggleButton">
+              <img class="icon" src="images/icons/play.png" alt="" />
+              <span class="button-label">Play music</span>
+            </button>
+            <div class="music-meta">
+              <span>Background music</span>
+              <strong id="viewMusicTitle">No music</strong>
+            </div>
+            <audio id="viewMusicAudio" loop preload="metadata"></audio>
+          </div>
           <div class="route-actions">
             <a class="route-button primary-link" id="routePrimaryLink" href="#/wall">
               <img class="icon" src="images/icons/back.png" alt="" />
@@ -244,6 +262,10 @@
     <template id="letterCardTemplate">
       <article class="letter-card">
         <div class="card-topline">
+          <span class="music-badge is-hidden">
+            <img class="icon" src="images/icons/music.png" alt="" />
+            <span>Music</span>
+          </span>
           <span class="edited-badge is-hidden">Edited</span>
         </div>
         <p class="card-to"></p>

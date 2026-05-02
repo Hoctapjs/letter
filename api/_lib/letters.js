@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 
 const MAX_SHORT_TEXT = 240;
+const MAX_URL = 2000;
 const MAX_MESSAGE = 12000;
 
 function createId() {
@@ -47,6 +48,9 @@ function validateLetterPayload(payload, options = {}) {
   const closing = normalizeText(data.closing, "With love") || "With love";
   const name = normalizeText(data.name);
   const meta = normalizeText(data.meta);
+  const musicId = normalizeText(data.musicId || data.music_id);
+  const musicTitle = normalizeText(data.musicTitle || data.music_title);
+  const musicUrl = normalizeText(data.musicUrl || data.music_url);
   const errors = [];
 
   if (!message) {
@@ -62,11 +66,17 @@ function validateLetterPayload(payload, options = {}) {
     ["closing", closing],
     ["name", name],
     ["meta", meta],
+    ["musicId", musicId],
+    ["musicTitle", musicTitle],
   ].forEach(([field, value]) => {
     if (value.length > MAX_SHORT_TEXT) {
       errors.push(`${field} must be ${MAX_SHORT_TEXT} characters or less.`);
     }
   });
+
+  if (musicUrl.length > MAX_URL) {
+    errors.push(`musicUrl must be ${MAX_URL} characters or less.`);
+  }
 
   if (errors.length) {
     const error = new Error("Invalid letter payload.");
@@ -81,6 +91,9 @@ function validateLetterPayload(payload, options = {}) {
     closing,
     name,
     meta,
+    musicId,
+    musicTitle,
+    musicUrl,
     id: options.id || createId(),
   };
 }
@@ -94,6 +107,9 @@ function mapLetterRow(row) {
     closing: row.closing || "With love",
     name: row.author_name || "",
     meta: row.meta || "",
+    musicId: row.music_id || "",
+    musicTitle: row.music_title || "",
+    musicUrl: row.music_url || "",
     createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
     updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
   };

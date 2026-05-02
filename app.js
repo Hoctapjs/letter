@@ -2,6 +2,7 @@ const DRAFT_KEY = "dearLetters.draft";
 const TOKEN_STORAGE_KEY = "dearLetters.editTokens";
 const LETTER_SCHEMA_VERSION = 1;
 const API_BASE = "/api/letters";
+const MUSIC_TRACKS_URL = "musics/tracks.json";
 
 const elements = {
   form: document.querySelector("#letterForm"),
@@ -12,6 +13,7 @@ const elements = {
   closing: document.querySelector("#closingInput"),
   name: document.querySelector("#nameInput"),
   meta: document.querySelector("#metaInput"),
+  music: document.querySelector("#musicSelect"),
   agree: document.querySelector("#agreeInput"),
   status: document.querySelector("#statusText"),
   previewLocation: document.querySelector("#previewLocation"),
@@ -48,6 +50,10 @@ const elements = {
   viewMessage: document.querySelector("#viewMessage"),
   viewClosing: document.querySelector("#viewClosing"),
   viewName: document.querySelector("#viewName"),
+  viewMusicPlayer: document.querySelector("#viewMusicPlayer"),
+  viewMusicTitle: document.querySelector("#viewMusicTitle"),
+  viewMusicAudio: document.querySelector("#viewMusicAudio"),
+  musicToggleButton: document.querySelector("#musicToggleButton"),
   copyLinkButton: document.querySelector("#copyLinkButton"),
   downloadViewImageButton: document.querySelector("#downloadViewImageButton"),
   shareModal: document.querySelector("#shareModal"),
@@ -66,6 +72,7 @@ let fileHandle = null;
 let activeViewLetter = null;
 let editingLetterId = null;
 let lastCreatedShare = null;
+let musicTracks = [];
 
 const todayText = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -80,6 +87,9 @@ function createEmptyDraft() {
     closing: "With love",
     name: "",
     meta: `Today, from my heart - ${todayText}`,
+    musicId: "",
+    musicTitle: "",
+    musicUrl: "",
   };
 }
 
@@ -105,6 +115,9 @@ function normalizeLetter(rawLetter = {}, index = 0) {
     closing: String(rawLetter.closing || "With love"),
     name: String(rawLetter.name || rawLetter.authorName || rawLetter.author_name || ""),
     meta: String(rawLetter.meta || `Today, from my heart - ${todayText}`),
+    musicId: String(rawLetter.musicId || rawLetter.music_id || ""),
+    musicTitle: String(rawLetter.musicTitle || rawLetter.music_title || ""),
+    musicUrl: String(rawLetter.musicUrl || rawLetter.music_url || ""),
     createdAt,
     updatedAt,
   };
@@ -130,6 +143,67 @@ function readJson(key, fallback) {
 
 function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function normalizeMusicTrack(rawTrack = {}) {
+  const id = String(rawTrack.id || "").trim();
+  const title = String(rawTrack.title || id || "Untitled track").trim();
+  const artist = String(rawTrack.artist || "").trim();
+  const url = String(rawTrack.url || "").trim();
+  const file = String(rawTrack.file || "").trim();
+
+  if (!id || !url) return null;
+
+  return {
+    id,
+    title,
+    artist,
+    file,
+    url,
+  };
+}
+
+function getMusicLabel(track) {
+  return track.artist ? `${track.title} - ${track.artist}` : track.title;
+}
+
+function renderMusicOptions() {
+  elements.music.replaceChildren();
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "No background music";
+  elements.music.append(emptyOption);
+
+  musicTracks.forEach((track) => {
+    const option = document.createElement("option");
+    option.value = track.id;
+    option.textContent = getMusicLabel(track);
+    elements.music.append(option);
+  });
+}
+
+async function loadMusicTracks() {
+  try {
+    const response = await fetch(MUSIC_TRACKS_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error("Music manifest not found.");
+
+    const data = await response.json();
+    const tracks = Array.isArray(data.tracks) ? data.tracks : [];
+    musicTracks = tracks.map(normalizeMusicTrack).filter(Boolean);
+  } catch {
+    musicTracks = [];
+  }
+
+  renderMusicOptions();
+}
+
+function findMusicTrack(trackId) {
+  return musicTracks.find((track) => track.id === trackId) || null;
+}
+
+function getSelectedMusicTrack() {
+  return findMusicTrack(elements.music.value);
 }
 
 function readEditTokens() {
@@ -237,21 +311,29 @@ async function deleteLetterViaApi(letterId) {
 }
 
 function getDraftFromForm() {
+  const selectedTrack = getSelectedMusicTrack();
+
   return {
     to: elements.to.value.trim(),
     message: elements.message.value.trim(),
     closing: elements.closing.value.trim(),
     name: elements.name.value.trim(),
     meta: elements.meta.value.trim(),
+    musicId: selectedTrack ? selectedTrack.id : "",
+    musicTitle: selectedTrack ? selectedTrack.title : "",
+    musicUrl: selectedTrack ? selectedTrack.url : "",
   };
 }
 
 function setForm(draft) {
+  const selectedMusicId = draft.musicId || draft.music_id || "";
+
   elements.to.value = draft.to || "";
   elements.message.value = draft.message || "";
   elements.closing.value = draft.closing || "With love";
   elements.name.value = draft.name || "";
   elements.meta.value = draft.meta || `Today, from my heart - ${todayText}`;
+  elements.music.value = findMusicTrack(selectedMusicId) ? selectedMusicId : "";
   updatePreview();
 }
 
@@ -337,6 +419,34 @@ function setControlIcon(control, iconName) {
   }
 }
 
+function setViewMusicPlayingState(isPlaying) {
+  setControlLabel(elements.musicToggleButton, isPlaying ? "Pause music" : "Play music");
+  setControlIcon(elements.musicToggleButton, isPlaying ? "pause" : "play");
+}
+
+function stopViewMusic() {
+  elements.viewMusicAudio.pause();
+  elements.viewMusicAudio.currentTime = 0;
+  setViewMusicPlayingState(false);
+}
+
+function renderViewMusicPlayer(letter) {
+  const hasMusic = Boolean(letter && letter.musicUrl);
+
+  stopViewMusic();
+  elements.viewMusicPlayer.classList.toggle("is-hidden", !hasMusic);
+
+  if (!hasMusic) {
+    elements.viewMusicAudio.removeAttribute("src");
+    elements.viewMusicTitle.textContent = "No music";
+    return;
+  }
+
+  elements.viewMusicAudio.src = letter.musicUrl;
+  elements.viewMusicTitle.textContent = letter.musicTitle || "Background music";
+  elements.viewMusicAudio.load();
+}
+
 function setEditMode(letter = null) {
   editingLetterId = letter ? letter.id : null;
   const isEditing = Boolean(letter);
@@ -398,6 +508,7 @@ async function renderLetterRoute(route) {
 
   if (!letter) {
     elements.viewPaperWrap.classList.add("is-hidden");
+    renderViewMusicPlayer(null);
     setRouteActionsVisible(false);
     elements.routeMode.textContent = "Loading";
     elements.routeTitle.textContent = "Loading letter";
@@ -432,6 +543,7 @@ async function renderLetterRoute(route) {
 
   const isEditRoute = route.name === "letter-edit";
   if (isEditRoute) {
+    renderViewMusicPlayer(null);
     setVisibleSection("compose");
     setActiveRouteLink("");
     setEditMode(letter);
@@ -444,6 +556,7 @@ async function renderLetterRoute(route) {
   elements.viewPaperWrap.classList.toggle("is-hidden", isEditRoute);
   setRouteActionsVisible(!isEditRoute);
   renderViewPaper(letter);
+  renderViewMusicPlayer(letter);
 
   elements.routeMode.textContent = isEditRoute ? "Edit route" : "Letter";
   elements.routeTitle.textContent = `Dear ${letter.to || "..."}`;
@@ -472,6 +585,8 @@ async function renderRoute() {
   }
 
   if (route.name === "compose") {
+    activeViewLetter = null;
+    renderViewMusicPlayer(null);
     setEditMode(null);
     setVisibleSection("compose");
     setActiveRouteLink("compose");
@@ -479,6 +594,8 @@ async function renderRoute() {
   }
 
   if (route.name === "wall") {
+    activeViewLetter = null;
+    renderViewMusicPlayer(null);
     setEditMode(null);
     setVisibleSection("wall");
     setActiveRouteLink("wall");
@@ -495,6 +612,7 @@ async function renderRoute() {
   setEditMode(null);
   activeViewLetter = null;
   elements.viewPaperWrap.classList.add("is-hidden");
+  renderViewMusicPlayer(null);
   setRouteActionsVisible(false);
   elements.routeMode.textContent = "Unknown route";
   elements.routeTitle.textContent = "This page does not exist";
@@ -605,12 +723,17 @@ function renderLetters() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .forEach((letter) => {
       const card = elements.template.content.firstElementChild.cloneNode(true);
+      const musicBadge = card.querySelector(".music-badge");
       const editedBadge = card.querySelector(".edited-badge");
       card.querySelector(".card-to").textContent = `Dear ${letter.to || "..."}`;
       card.querySelector(".card-message").textContent = letter.message || "";
       card.querySelector(".card-name").textContent = letter.name || "Anonymous";
       card.querySelector(".card-date").textContent = new Intl.DateTimeFormat("vi-VN").format(new Date(letter.createdAt));
       card.querySelector(".card-date").dateTime = letter.createdAt;
+      musicBadge.classList.toggle("is-hidden", !letter.musicUrl);
+      if (letter.musicTitle) {
+        musicBadge.title = `Music: ${letter.musicTitle}`;
+      }
       editedBadge.classList.toggle("is-hidden", !letter.updatedAt);
       card.querySelector(".view-card").addEventListener("click", () => {
         location.hash = `#/letter/${encodeURIComponent(letter.id)}`;
@@ -906,6 +1029,7 @@ function closeShareModal() {
 }
 
 elements.form.addEventListener("input", updatePreview);
+elements.music.addEventListener("change", updatePreview);
 
 elements.form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -981,6 +1105,25 @@ elements.downloadImageButton.addEventListener("click", () => downloadLetterImage
 elements.downloadViewImageButton.addEventListener("click", () => {
   if (activeViewLetter) downloadLetterImage(activeViewLetter);
 });
+elements.musicToggleButton.addEventListener("click", async () => {
+  if (!elements.viewMusicAudio.src) return;
+
+  if (elements.viewMusicAudio.paused) {
+    try {
+      await elements.viewMusicAudio.play();
+      setViewMusicPlayingState(true);
+    } catch {
+      showStatus("Could not play this music file.");
+    }
+    return;
+  }
+
+  elements.viewMusicAudio.pause();
+  setViewMusicPlayingState(false);
+});
+elements.viewMusicAudio.addEventListener("ended", () => setViewMusicPlayingState(false));
+elements.viewMusicAudio.addEventListener("pause", () => setViewMusicPlayingState(false));
+elements.viewMusicAudio.addEventListener("play", () => setViewMusicPlayingState(true));
 elements.copyLinkButton.addEventListener("click", copyActiveLetterLink);
 elements.copyViewLinkButton.addEventListener("click", () => {
   if (lastCreatedShare) copyTextWithButtonFeedback(lastCreatedShare.viewLink, elements.copyViewLinkButton);
@@ -1009,7 +1152,7 @@ elements.exportJsonButton.addEventListener("click", () => {
 
 window.addEventListener("hashchange", renderRoute);
 
-loadInitialLetters().then(() => {
+Promise.all([loadMusicTracks(), loadInitialLetters()]).then(() => {
   setForm(readJson(DRAFT_KEY, createEmptyDraft()));
   renderLetters();
   renderRoute();
