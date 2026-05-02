@@ -7,6 +7,20 @@
       "artist": "Noo Phước Thịnh",
       "file": "thuong-em-la-dieu-anh-khong-the-ngo.mp3",
       "url": "musics/thuong-em-la-dieu-anh-khong-the-ngo.mp3"
+    },
+    {
+      "id": "loneliness-naruto-shippuden-fingerstyle-guitar",
+      "title": "Loneliness Naruto Shippuden Fingerstyle Guitar",
+      "artist": "",
+      "file": "loneliness-naruto-shippuden-fingerstyle-guitar.mp3",
+      "url": "musics/loneliness-naruto-shippuden-fingerstyle-guitar.mp3"
+    },
+    {
+      "id": "only-piano-loneliness",
+      "title": "Only Piano Loneliness",
+      "artist": "",
+      "file": "only-piano-loneliness.mp3",
+      "url": "musics/only-piano-loneliness.mp3"
     }
   ]
 }
