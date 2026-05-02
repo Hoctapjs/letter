@@ -21,6 +21,41 @@
       "artist": "",
       "file": "only-piano-loneliness.mp3",
       "url": "musics/only-piano-loneliness.mp3"
+    },
+    {
+      "id": "dan-piano-dep",
+      "title": "Đàn Piano Đẹp",
+      "artist": "",
+      "file": "dan-piano-dep.mp3",
+      "url": "musics/dan-piano-dep.mp3"
+    },
+    {
+      "id": "melody-of-peace",
+      "title": "Melody of Peace",
+      "artist": "",
+      "file": "melody-of-peace.mp3",
+      "url": "musics/melody-of-peace.mp3"
+    },
+    {
+      "id": "mua-xuan",
+      "title": "Mùa Xuân",
+      "artist": "",
+      "file": "mua-xuan.mp3",
+      "url": "musics/mua-xuan.mp3"
+    },
+    {
+      "id": "ngam-sao",
+      "title": "Ngắm Sao",
+      "artist": "",
+      "file": "ngam-sao.mp3",
+      "url": "musics/ngam-sao.mp3"
+    },
+    {
+      "id": "nhung-bong-hoa-piano-version",
+      "title": "Những Bông Hoa (Piano Version)",
+      "artist": "",
+      "file": "nhung-bong-hoa-piano-version.mp3",
+      "url": "musics/nhung-bong-hoa-piano-version.mp3"
     }
   ]
 }
